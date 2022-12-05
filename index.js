@@ -1,10 +1,14 @@
-import recipe from "./lib/recipe-repo.js";
+import express from "express";
+import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
+
+import recipe from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
-import expressPromiseRouter from "express-promise-router";
-import express from "express";
+
+import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
+import fakePubSub from "./test/helpers/fake-pub-sub.js";
 
 export function route(key, fn) {
   const result = {};
@@ -40,3 +44,10 @@ export function start({recipes, startServer = true}) {
 
   return app;
 }
+
+export default {
+  testHelpers: {
+    fakeCloudTask,
+    fakePubSub
+  }
+};
