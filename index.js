@@ -9,6 +9,7 @@ import resumeHandler from "./lib/resume-handler.js";
 
 import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
 import fakePubSub from "./test/helpers/fake-pub-sub.js";
+import fakeGcpAuth from "./test/helpers/fake-gcp-auth.js";
 
 export function route(key, fn) {
   const result = {};
@@ -48,6 +49,7 @@ export function start({recipes, startServer = true}) {
 export default {
   testHelpers: {
     fakeCloudTask,
-    fakePubSub
+    fakePubSub,
+    fakeGcpAuth
   }
 };
