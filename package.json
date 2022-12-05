@@ -2,7 +2,7 @@
   "name": "b0rker",
   "version": "1.0.0",
   "engines": {
-    "node": ">=16 >=18"
+    "node": ">=16 <=18"
   },
   "type": "module",
   "description": "A message broker for Bonnier News",
