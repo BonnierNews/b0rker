@@ -10,6 +10,8 @@ import resumeHandler from "./lib/resume-handler.js";
 import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
 import fakePubSub from "./test/helpers/fake-pub-sub.js";
 import fakeGcpAuth from "./test/helpers/fake-gcp-auth.js";
+import {assertRejected, assertRetry} from "./test/helpers/assert-helpers.js";
+import {buildMessage} from "./test/helpers/build-message.js";
 
 export function route(key, fn) {
   const result = {};
@@ -50,6 +52,9 @@ export default {
   testHelpers: {
     fakeCloudTask,
     fakePubSub,
-    fakeGcpAuth
+    fakeGcpAuth,
+    buildMessage,
+    assertRejected,
+    assertRetry
   }
 };
