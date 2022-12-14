@@ -6,6 +6,7 @@ import recipe from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
+import buildContext from "./lib/context.js";
 
 import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
 import fakePubSub from "./test/helpers/fake-pub-sub.js";
@@ -55,6 +56,7 @@ export default {
     fakeGcpAuth,
     buildMessage,
     assertRejected,
-    assertRetry
+    assertRetry,
+    buildContext
   }
 };
