@@ -49,14 +49,12 @@ export function start({recipes, startServer = true}) {
   return app;
 }
 
-export default {
-  testHelpers: {
-    fakeCloudTask,
-    fakePubSub,
-    fakeGcpAuth,
-    buildMessage,
-    assertRejected,
-    assertRetry,
-    buildContext
-  }
+export const testHelpers = {
+  fakeCloudTask,
+  fakePubSub,
+  fakeGcpAuth,
+  buildMessage,
+  assertRejected,
+  assertRetry,
+  buildContext
 };
