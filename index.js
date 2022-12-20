@@ -11,6 +11,7 @@ import buildContext from "./lib/context.js";
 import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
 import fakePubSub from "./test/helpers/fake-pub-sub.js";
 import fakeGcpAuth from "./test/helpers/fake-gcp-auth.js";
+import run from "./test/helpers/run.js";
 import {assertRejected, assertRetry} from "./test/helpers/assert-helpers.js";
 import {buildMessage} from "./test/helpers/build-message.js";
 
@@ -56,5 +57,6 @@ export const testHelpers = {
   buildMessage,
   assertRejected,
   assertRetry,
-  buildContext
+  buildContext,
+  run
 };
