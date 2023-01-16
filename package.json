@@ -1,5 +1,5 @@
 {
-  "name": "b0rker",
+  "name": "@bonniernews/b0rker",
   "version": "1.8.0",
   "engines": {
     "node": ">=16 <=18"
@@ -14,9 +14,14 @@
     "coverage": "nyc yarn test",
     "check-coverage": "nyc check-coverage"
   },
-  "repository": "github:BonnierNews/b0rker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BonnierNews/b0rker.git"
+  },
   "homepage": "https://github.com/BonnierNews/b0rker",
-  "bugs": "https://github.com/BonnierNews/lu-broker/issues",
+  "bugs": {
+    "url": "https://github.com/BonnierNews/lu-broker/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@google-cloud/firestore": "^6.4.1",
@@ -46,5 +51,13 @@
   "peerDependencies": {
     "sinon": "^14.0.2",
     "supertest": "^6.3.1"
-  }
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "keywords": [
+    "pubsub"
+  ],
+  "author": "Bonnier News"
 }
