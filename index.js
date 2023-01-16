@@ -6,6 +6,7 @@ import recipe from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
+import triggerHandler from "./lib/trigger-handler.js";
 import buildContext from "./lib/context.js";
 
 import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
@@ -34,9 +35,7 @@ export function start({recipes, startServer = true}) {
 
   router.post("/resume-message", resumeHandler);
   router.post("/message", messageHandler.bind(messageHandler, recipeMap));
-
-  // Do something here?
-  // router.get("/trigger", (req, res) => triggerHandler(req, res));
+  router.post("/trigger/:namespace/:sequence", triggerHandler.bind(triggerHandler, recipeMap));
 
   app.use(router);
 
