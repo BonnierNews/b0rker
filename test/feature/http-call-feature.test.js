@@ -1,7 +1,8 @@
-import {start, route} from "../../index.js";
-import fakePubSub from "../helpers/fake-pub-sub.js";
 import nock from "nock";
-import fakeGcpAuth from "../helpers/fake-gcp-auth.js";
+import {start, route} from "../../index.js";
+import testHelpers from "lu-test";
+
+const {fakePubSub, fakeGcpAuth} = testHelpers;
 
 const triggerMessage = {
   type: "advertisement-order",

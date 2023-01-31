@@ -1,5 +1,6 @@
 import {start, route} from "../../index.js";
-import run from "../helpers/run.js";
+import testHelpers from "lu-test";
+const {run} = testHelpers;
 
 Feature("Broker sequence with 'run'", () => {
   Scenario("Trigger a sequence with multiple lambdas", () => {
