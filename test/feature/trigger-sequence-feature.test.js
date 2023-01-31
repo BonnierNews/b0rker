@@ -1,6 +1,8 @@
-import {start, route} from "../../index.js";
-import fakePubSub from "../helpers/fake-pub-sub.js";
 import request from "supertest";
+import testHelpers from "lu-test";
+import {start, route} from "../../index.js";
+
+const {fakePubSub} = testHelpers;
 
 const triggerMessage = {
   type: "advertisement-order",

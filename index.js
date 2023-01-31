@@ -7,14 +7,6 @@ import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
 import triggerHandler from "./lib/trigger-handler.js";
-import buildContext from "./lib/context.js";
-
-import fakeCloudTask from "./test/helpers/fake-cloud-task.js";
-import fakePubSub from "./test/helpers/fake-pub-sub.js";
-import fakeGcpAuth from "./test/helpers/fake-gcp-auth.js";
-import run from "./test/helpers/run.js";
-import {assertRejected, assertRetry} from "./test/helpers/assert-helpers.js";
-import {buildMessage} from "./test/helpers/build-message.js";
 
 export function route(key, fn) {
   const result = {};
@@ -48,14 +40,3 @@ export function start({recipes, startServer = true}) {
 
   return app;
 }
-
-export const testHelpers = {
-  fakeCloudTask,
-  fakePubSub,
-  fakeGcpAuth,
-  buildMessage,
-  assertRejected,
-  assertRetry,
-  buildContext,
-  run
-};
