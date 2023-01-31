@@ -7,6 +7,7 @@ import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
 import triggerHandler from "./lib/trigger-handler.js";
+export {default as buildContext} from "./lib/context.js";
 
 export function route(key, fn) {
   const result = {};
