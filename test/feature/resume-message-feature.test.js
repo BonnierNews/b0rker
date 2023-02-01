@@ -1,9 +1,7 @@
 import config from "exp-config";
 import {start, route} from "../../index.js";
 import nock from "nock";
-import testHelpers from "lu-test";
-
-const {fakePubSub, fakeGcpAuth, fakeCloudTask} = testHelpers;
+import {fakePubSub, fakeGcpAuth, fakeCloudTask} from "@bonniernews/lu-test";
 
 const triggerMessage = {
   type: "advertisement-order",
@@ -66,6 +64,7 @@ Feature("Resume message", () => {
     });
 
     And("there should be a processed message", () => {
+      // console.log(fakePubSub.recordedMessageHandlerResponses());
       const last = [...fakePubSub.recordedMessages()].pop();
       last.attributes.key.should.eql("sequence.test.processed");
       last.message.data.should.eql([{type: "some-type", id: "some-id"}]);

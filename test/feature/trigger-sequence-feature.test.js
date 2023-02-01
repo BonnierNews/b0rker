@@ -1,8 +1,6 @@
 import request from "supertest";
-import testHelpers from "lu-test";
+import {fakePubSub} from "@bonniernews/lu-test";
 import {start, route} from "../../index.js";
-
-const {fakePubSub} = testHelpers;
 
 const triggerMessage = {
   type: "advertisement-order",

@@ -1,8 +1,6 @@
 import nock from "nock";
 import {start, route} from "../../index.js";
-import testHelpers from "lu-test";
-
-const {fakePubSub, fakeGcpAuth} = testHelpers;
+import {fakePubSub, fakeGcpAuth} from "@bonniernews/lu-test";
 
 const triggerMessage = {
   type: "advertisement-order",

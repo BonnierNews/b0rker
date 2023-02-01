@@ -1,7 +1,6 @@
 import config from "exp-config";
 import {start, route} from "../../index.js";
-import testHelpers from "lu-test";
-const {fakePubSub} = testHelpers;
+import {fakePubSub} from "@bonniernews/lu-test";
 
 const triggerMessage = {
   type: "advertisement-order",

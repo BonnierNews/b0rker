@@ -1,7 +1,6 @@
 import nock from "nock";
 import http from "../../lib/http.js";
-import testHelpers from "lu-test";
-const {fakeGcpAuth} = testHelpers;
+import {fakeGcpAuth} from "@bonniernews/lu-test";
 
 const baseUrl = "https://some-base.local";
 const fakeApi = nock(baseUrl);

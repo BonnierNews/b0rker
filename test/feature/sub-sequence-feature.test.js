@@ -1,6 +1,5 @@
 import {start, route} from "../../index.js";
-import testHelpers from "lu-test";
-const {fakePubSub, fakeGcpAuth} = testHelpers;
+import {fakePubSub, fakeGcpAuth} from "@bonniernews/lu-test";
 
 import nock from "nock";
 import jobStorage from "../../lib/job-storage/index.js";

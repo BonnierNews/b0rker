@@ -1,6 +1,5 @@
 import {start, route} from "../../index.js";
-import testHelpers from "lu-test";
-const {run} = testHelpers;
+import {runSequence} from "@bonniernews/lu-test";
 
 Feature("Broker sequence with 'run'", () => {
   Scenario("Trigger a sequence with multiple lambdas", () => {
@@ -35,7 +34,7 @@ Feature("Broker sequence with 'run'", () => {
 
     let last;
     When("a trigger message is received", async () => {
-      last = await run(broker, "trigger.sequence.advertisement-order", triggerMessage);
+      last = await runSequence(broker, "trigger.sequence.advertisement-order", triggerMessage);
     });
 
     And("four messages should have been published", () => {
