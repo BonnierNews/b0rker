@@ -2,12 +2,13 @@ import express from "express";
 import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
 
-import recipe from "./lib/recipe-repo.js";
+import { init } from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
 import triggerHandler from "./lib/trigger-handler.js";
-export {default as buildContext} from "./lib/context.js";
+
+export { default as buildContext } from "./lib/context.js";
 
 export function route(key, fn) {
   const result = {};
@@ -15,12 +16,12 @@ export function route(key, fn) {
   return result;
 }
 
-export function start({recipes, startServer = true}) {
+export function start({ recipes, startServer = true }) {
   const router = expressPromiseRouter();
   const app = express();
   app.use(express.json());
 
-  const recipeMap = recipe.init(recipes);
+  const recipeMap = init(recipes);
 
   router.get("/", (req, res) => {
     res.send("Im alive - som fan!");

@@ -1,9 +1,10 @@
-import {start, route} from "../../index.js";
-import {fakePubSub} from "@bonniernews/lu-test";
+import { fakePubSub } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
-  id: "some-order-id"
+  id: "some-order-id",
 };
 
 Feature("Retry message", () => {
@@ -20,12 +21,12 @@ Feature("Retry message", () => {
             namespace: "sequence",
             name: "advertisement-order",
             sequence: [
-              route(".perform.step-1", (message, {retryIf}) => {
+              route(".perform.step-1", (message, { retryIf }) => {
                 retryIf(true);
-              })
-            ]
-          }
-        ]
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -35,9 +36,7 @@ Feature("Retry message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {

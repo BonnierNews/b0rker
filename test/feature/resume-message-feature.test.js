@@ -1,11 +1,12 @@
 import config from "exp-config";
-import {start, route} from "../../index.js";
 import nock from "nock";
-import {fakePubSub, fakeGcpAuth, fakeCloudTask} from "@bonniernews/lu-test";
+import { fakePubSub, fakeGcpAuth, fakeCloudTask } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
-  id: "some-order-id"
+  id: "some-order-id",
 };
 
 Feature("Resume message", () => {
@@ -34,13 +35,13 @@ Feature("Resume message", () => {
               route(".perform.resume-step", () => {
                 if (!called) {
                   called = true;
-                  return {type: "resume", delayMs: 1000};
+                  return { type: "resume", delayMs: 1000 };
                 }
-                return {type: "some-type", id: "some-id"};
-              })
-            ]
-          }
-        ]
+                return { type: "some-type", id: "some-id" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -54,9 +55,7 @@ Feature("Resume message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.test"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -65,20 +64,20 @@ Feature("Resume message", () => {
 
     And("there should be a processed message", () => {
       // console.log(fakePubSub.recordedMessageHandlerResponses());
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.key.should.eql("sequence.test.processed");
-      last.message.data.should.eql([{type: "some-type", id: "some-id"}]);
+      last.message.data.should.eql([ { type: "some-type", id: "some-id" } ]);
     });
 
     And("a task should have been published", () => {
-      const last = [...fakeCloudTask.recordedMessages()].pop();
+      const last = [ ...fakeCloudTask.recordedMessages() ].pop();
       last.message.should.eql({
         resumedCount: 1,
         key: "sequence.test.perform.resume-step",
         message: {
           ...triggerMessage,
-          data: []
-        }
+          data: [],
+        },
       });
     });
   });
@@ -94,11 +93,11 @@ Feature("Resume message", () => {
             name: "test",
             sequence: [
               route(".perform.resume-step", () => {
-                return {type: "resume", delayMs: 1000};
-              })
-            ]
-          }
-        ]
+                return { type: "resume", delayMs: 1000 };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -112,9 +111,7 @@ Feature("Resume message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.test"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -126,7 +123,7 @@ Feature("Resume message", () => {
     });
 
     And("the message should have been rejected", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.topic.should.eql(config.deadLetterTopic);
       last.message.error.should.eql("To many resume retries. Retries: 10", last.message);
     });
@@ -146,13 +143,13 @@ Feature("Resume message", () => {
               route(".perform.resume-step", () => {
                 if (!called) {
                   called = true;
-                  return {type: "resume", delayMs: 1};
+                  return { type: "resume", delayMs: 1 };
                 }
-                return {type: "some-type", id: "some-id"};
-              })
-            ]
-          }
-        ]
+                return { type: "some-type", id: "some-id" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -162,9 +159,7 @@ Feature("Resume message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.test"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -195,13 +190,13 @@ Feature("Resume message", () => {
               route(".perform.resume-step", () => {
                 if (!called) {
                   called = true;
-                  return {type: "resume", delayMs: 1000};
+                  return { type: "resume", delayMs: 1000 };
                 }
-                return {type: "some-type", id: "some-id"};
-              })
-            ]
-          }
-        ]
+                return { type: "some-type", id: "some-id" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -215,9 +210,7 @@ Feature("Resume message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.test"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
     });
 
     Then("the status code should be 200 OK", () => {

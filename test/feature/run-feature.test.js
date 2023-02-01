@@ -1,5 +1,6 @@
-import {start, route} from "../../index.js";
-import {runSequence} from "@bonniernews/lu-test";
+import { runSequence } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 Feature("Broker sequence with 'run'", () => {
   Scenario("Trigger a sequence with multiple lambdas", () => {
@@ -13,23 +14,23 @@ Feature("Broker sequence with 'run'", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
+                return { type: "step-1", id: "step-1-was-here" };
               }),
               route(".perform.step-2", () => {
-                return {type: "step-2", id: "step-2-was-here"};
+                return { type: "step-2", id: "step-2-was-here" };
               }),
               route(".perform.step-3", () => {
-                return {type: "step-3", id: "step-3-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-3", id: "step-3-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
     const triggerMessage = {
       type: "advertisement-order",
       id: "some-order-id",
-      correlationId: "some-corr-id"
+      correlationId: "some-corr-id",
     };
 
     let last;
@@ -45,10 +46,10 @@ Feature("Broker sequence with 'run'", () => {
       last.message.should.eql({
         ...triggerMessage,
         data: [
-          {type: "step-1", id: "step-1-was-here"},
-          {type: "step-2", id: "step-2-was-here"},
-          {type: "step-3", id: "step-3-was-here"}
-        ]
+          { type: "step-1", id: "step-1-was-here" },
+          { type: "step-2", id: "step-2-was-here" },
+          { type: "step-3", id: "step-3-was-here" },
+        ],
       });
     });
   });

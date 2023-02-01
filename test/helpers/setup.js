@@ -16,8 +16,6 @@ events.EventEmitter.defaultMaxListeners = 256;
 chai.config.truncateThreshold = 0;
 chai.config.includeStack = true;
 
-Object.assign(global, {
-  should: chai.should()
-});
+Object.assign(global, { should: chai.should() });
 
 nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);

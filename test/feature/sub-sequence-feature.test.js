@@ -1,12 +1,12 @@
-import {start, route} from "../../index.js";
-import {fakePubSub, fakeGcpAuth} from "@bonniernews/lu-test";
-
+import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
 import nock from "nock";
+
+import { start, route } from "../../index.js";
 import jobStorage from "../../lib/job-storage/index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
-  id: "some-order-id"
+  id: "some-order-id",
 };
 
 Feature("Child proccesses", () => {
@@ -37,25 +37,25 @@ Feature("Child proccesses", () => {
                 type: "trigger",
                 key: "sub-sequence.test2",
                 data: [],
-                source: [{id: "child-1"}, {id: "child-2"}]
+                source: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
-                id: "hello"
-              }))
-            ]
+                id: "hello",
+              })),
+            ],
           },
           {
             namespace: "sub-sequence",
             name: "test2",
             sequence: [
-              route(".perform.something-in-child", ({id}) => ({
+              route(".perform.something-in-child", ({ id }) => ({
                 type: `I was here ${id}`,
-                id
-              }))
-            ]
-          }
-        ]
+                id,
+              })),
+            ],
+          },
+        ],
       });
     });
 
@@ -67,10 +67,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        {triggerMessage, correlationId: "abc123"},
-        {
-          key: "trigger.sequence.test"
-        }
+        { triggerMessage, correlationId: "abc123" },
+        { key: "trigger.sequence.test" }
       );
     });
 
@@ -82,8 +80,8 @@ Feature("Child proccesses", () => {
       fakePubSub.recordedMessages().length.should.eql(9);
     });
     And("the last message should have correct format", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
-      last.attributes.should.contain({key: "sequence.test.processed"});
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sequence.test.processed" });
     });
     And("the children should have been added to the database and been completed", () => {
       jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(2);
@@ -98,9 +96,9 @@ Feature("Child proccesses", () => {
             type: "trigger",
             key: "sub-sequence.test2",
             data: [],
-            source: [{id: "child-1"}, {id: "child-2"}]
-          }
-        ]
+            source: [ { id: "child-1" }, { id: "child-2" } ],
+          },
+        ],
       });
     });
   });
@@ -118,25 +116,25 @@ Feature("Child proccesses", () => {
               route(".trigger-sub-sequence.create-children-step", () => ({
                 id: "123",
                 type: "trigger",
-                key: "sub-sequence.test2"
+                key: "sub-sequence.test2",
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
-                id: "hello"
-              }))
-            ]
+                id: "hello",
+              })),
+            ],
           },
           {
             namespace: "sub-sequence",
             name: "test2",
             sequence: [
-              route(".perform.something-in-child", ({id}) => ({
+              route(".perform.something-in-child", ({ id }) => ({
                 type: `I was here ${id}`,
-                id
-              }))
-            ]
-          }
-        ]
+                id,
+              })),
+            ],
+          },
+        ],
       });
     });
 
@@ -148,10 +146,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        {triggerMessage, correlationId: "abc123"},
-        {
-          key: "trigger.sequence.test"
-        }
+        { triggerMessage, correlationId: "abc123" },
+        { key: "trigger.sequence.test" }
       );
     });
 
@@ -178,25 +174,25 @@ Feature("Child proccesses", () => {
                 id: "123",
                 type: "trigger",
                 key: "sequence.test2",
-                source: [{id: "child-1"}, {id: "child-2"}]
+                source: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
-                id: "hello"
-              }))
-            ]
+                id: "hello",
+              })),
+            ],
           },
           {
             namespace: "sequence",
             name: "test2",
             sequence: [
-              route(".perform.something-in-child", ({id}) => ({
+              route(".perform.something-in-child", ({ id }) => ({
                 type: `I was here ${id}`,
-                id
-              }))
-            ]
-          }
-        ]
+                id,
+              })),
+            ],
+          },
+        ],
       });
     });
 
@@ -208,10 +204,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        {triggerMessage, correlationId: "abc123"},
-        {
-          key: "trigger.sequence.test"
-        }
+        { triggerMessage, correlationId: "abc123" },
+        { key: "trigger.sequence.test" }
       );
     });
 
@@ -238,25 +232,25 @@ Feature("Child proccesses", () => {
                 id: "123",
                 type: "trigger",
                 key: "sub-sequence.test2",
-                source: [{id: "child-1"}, {id: "child-2"}]
+                source: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
-                id: "hello"
-              }))
-            ]
+                id: "hello",
+              })),
+            ],
           },
           {
             namespace: "sub-sequence",
             name: "test2",
             sequence: [
-              route(".perform.something-in-child", ({id}) => ({
+              route(".perform.something-in-child", ({ id }) => ({
                 type: `I was here ${id}`,
-                id
-              }))
-            ]
-          }
-        ]
+                id,
+              })),
+            ],
+          },
+        ],
       });
     });
 
@@ -268,10 +262,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        {triggerMessage, correlationId: "abc123"},
-        {
-          key: "trigger.sequence.test"
-        }
+        { triggerMessage, correlationId: "abc123" },
+        { key: "trigger.sequence.test" }
       );
     });
 
@@ -294,13 +286,13 @@ Feature("Child proccesses", () => {
             namespace: "sub-sequence",
             name: "test2",
             sequence: [
-              route(".perform.something-in-child", ({id}) => ({
+              route(".perform.something-in-child", ({ id }) => ({
                 type: `I was here ${id}`,
-                id
-              }))
-            ]
-          }
-        ]
+                id,
+              })),
+            ],
+          },
+        ],
       });
     });
 
@@ -312,10 +304,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        {triggerMessage, correlationId: "abc123"},
-        {
-          key: "trigger.sub-sequence.test2"
-        }
+        { triggerMessage, correlationId: "abc123" },
+        { key: "trigger.sub-sequence.test2" }
       );
     });
 
@@ -327,8 +317,8 @@ Feature("Child proccesses", () => {
       fakePubSub.recordedMessages().length.should.eql(2);
     });
     And("the last message should have correct format", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
-      last.attributes.should.contain({key: "sub-sequence.test2.processed"});
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
     });
     And("the children should not have been added to the database", () => {
       jobStorage.getDB().should.eql({});

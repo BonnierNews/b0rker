@@ -1,10 +1,11 @@
 import nock from "nock";
-import {start, route} from "../../index.js";
-import {fakePubSub, fakeGcpAuth} from "@bonniernews/lu-test";
+import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
-  id: "some-order-id"
+  id: "some-order-id",
 };
 
 Feature("Make http call from lambda", () => {
@@ -22,7 +23,7 @@ Feature("Make http call from lambda", () => {
   Scenario("Using context http to make calls", () => {
     let broker;
     Given("there is an api we want to call", () => {
-      nock(apiUrl).get("/test").reply(200, {id: "123"});
+      nock(apiUrl).get("/test").reply(200, { id: "123" });
     });
 
     Given("broker is initiated with a recipe", () => {
@@ -34,12 +35,12 @@ Feature("Make http call from lambda", () => {
             name: "test",
             sequence: [
               route(".perform.http-step", async (message, context) => {
-                const {body} = await context.http.get({baseUrl: apiUrl, path: "/test"});
-                return {type: "testing", id: body.id};
-              })
-            ]
-          }
-        ]
+                const { body } = await context.http.get({ baseUrl: apiUrl, path: "/test" });
+                return { type: "testing", id: body.id };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -49,9 +50,7 @@ Feature("Make http call from lambda", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.test"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -65,7 +64,7 @@ Feature("Make http call from lambda", () => {
     And("there should be a processed message", () => {
       const last = fakePubSub.recordedMessages()[fakePubSub.recordedMessages().length - 1];
       last.attributes.key.should.eql("sequence.test.processed");
-      last.message.data.should.eql([{type: "testing", id: "123"}]);
+      last.message.data.should.eql([ { type: "testing", id: "123" } ]);
     });
   });
 });

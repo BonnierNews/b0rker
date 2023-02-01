@@ -1,11 +1,12 @@
 import request from "supertest";
-import {fakePubSub} from "@bonniernews/lu-test";
-import {start, route} from "../../index.js";
+import { fakePubSub } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
   id: "some-order-id",
-  correlationId: "some-corr-id"
+  correlationId: "some-corr-id",
 };
 
 Feature("Trigger sequence by http call", () => {
@@ -23,11 +24,11 @@ Feature("Trigger sequence by http call", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -49,10 +50,10 @@ Feature("Trigger sequence by http call", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
-        data: [{type: "step-1", id: "step-1-was-here"}]
+        data: [ { type: "step-1", id: "step-1-was-here" } ],
       });
     });
   });
@@ -68,11 +69,11 @@ Feature("Trigger sequence by http call", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -86,7 +87,7 @@ Feature("Trigger sequence by http call", () => {
     });
 
     And("the response should contain an error message", () => {
-      response.body.should.eql({error: "Unknown trigger key trigger.sequence.unknown-sequence"});
+      response.body.should.eql({ error: "Unknown trigger key trigger.sequence.unknown-sequence" });
     });
   });
 });

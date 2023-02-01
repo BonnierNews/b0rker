@@ -1,10 +1,11 @@
-import {start, route} from "../../index.js";
-import {fakePubSub} from "@bonniernews/lu-test";
+import { fakePubSub } from "@bonniernews/lu-test";
+
+import { start, route } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",
   id: "some-order-id",
-  correlationId: "some-corr-id"
+  correlationId: "some-corr-id",
 };
 
 Feature("Broker sequence", () => {
@@ -22,11 +23,11 @@ Feature("Broker sequence", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -36,9 +37,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -50,10 +49,10 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
-        data: [{type: "step-1", id: "step-1-was-here"}]
+        data: [ { type: "step-1", id: "step-1-was-here" } ],
       });
     });
   });
@@ -69,17 +68,17 @@ Feature("Broker sequence", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
+                return { type: "step-1", id: "step-1-was-here" };
               }),
               route(".perform.step-2", () => {
-                return {type: "step-2", id: "step-2-was-here"};
+                return { type: "step-2", id: "step-2-was-here" };
               }),
               route(".perform.step-3", () => {
-                return {type: "step-3", id: "step-3-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-3", id: "step-3-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -89,9 +88,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -103,14 +100,14 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [
-          {type: "step-1", id: "step-1-was-here"},
-          {type: "step-2", id: "step-2-was-here"},
-          {type: "step-3", id: "step-3-was-here"}
-        ]
+          { type: "step-1", id: "step-1-was-here" },
+          { type: "step-2", id: "step-2-was-here" },
+          { type: "step-3", id: "step-3-was-here" },
+        ],
       });
     });
   });
@@ -127,16 +124,16 @@ Feature("Broker sequence", () => {
             sequence: [
               route(".perform.step-1", () => {
                 return [
-                  {type: "step-1", id: "step-1-was-here"},
-                  {type: "step-1-again", id: "step-1-was-here-again"}
+                  { type: "step-1", id: "step-1-was-here" },
+                  { type: "step-1-again", id: "step-1-was-here-again" },
                 ];
               }),
               route(".perform.step-2", () => {
-                return {type: "step-2", id: "step-2-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-2", id: "step-2-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -146,9 +143,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -160,14 +155,14 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [
-          {type: "step-1", id: "step-1-was-here"},
-          {type: "step-1-again", id: "step-1-was-here-again"},
-          {type: "step-2", id: "step-2-was-here"}
-        ]
+          { type: "step-1", id: "step-1-was-here" },
+          { type: "step-1-again", id: "step-1-was-here-again" },
+          { type: "step-2", id: "step-2-was-here" },
+        ],
       });
     });
   });
@@ -186,11 +181,11 @@ Feature("Broker sequence", () => {
                 return;
               }),
               route(".perform.step-2", () => {
-                return {type: "step-2", id: "step-2-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-2", id: "step-2-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -200,9 +195,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -214,10 +207,10 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
-        data: [{type: "step-2", id: "step-2-was-here"}]
+        data: [ { type: "step-2", id: "step-2-was-here" } ],
       });
     });
   });
@@ -233,19 +226,17 @@ Feature("Broker sequence", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
     let response;
     When("an unknown trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.unknown"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.unknown" });
     });
 
     Then("the status code should be 400 Bad request", () => {
@@ -265,13 +256,13 @@ Feature("Broker sequence", () => {
             sequence: [
               route(".perform.step-1", async () => {
                 const promise = new Promise((resolve) => {
-                  return resolve({type: "step-1", id: "step-1-was-here"});
+                  return resolve({ type: "step-1", id: "step-1-was-here" });
                 });
                 return await promise;
-              })
-            ]
-          }
-        ]
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -281,9 +272,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -295,10 +284,10 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [...fakePubSub.recordedMessages()].pop();
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
-        data: [{type: "step-1", id: "step-1-was-here"}]
+        data: [ { type: "step-1", id: "step-1-was-here" } ],
       });
     });
   });
@@ -314,11 +303,11 @@ Feature("Broker sequence", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", () => {
-                return {type: "step-1", id: "step-1-was-here"};
-              })
-            ]
-          }
-        ]
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+            ],
+          },
+        ],
       });
     });
 
@@ -338,7 +327,7 @@ Feature("Broker sequence", () => {
     Given("a lambda that access message", () => {
       performOne = (message) => {
         firstLambdaMessage = message;
-        return {type: "step-1", id: "step-1-was-here"};
+        return { type: "step-1", id: "step-1-was-here" };
       };
     });
 
@@ -358,9 +347,9 @@ Feature("Broker sequence", () => {
           {
             namespace: "sequence",
             name: "advertisement-order",
-            sequence: [route(".perform.step-1", performOne), route(".perform.step-2", performTwo)]
-          }
-        ]
+            sequence: [ route(".perform.step-1", performOne), route(".perform.step-2", performTwo) ],
+          },
+        ],
       });
     });
 
@@ -370,9 +359,7 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order"
-      });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -380,7 +367,7 @@ Feature("Broker sequence", () => {
     });
 
     And("the first lambda should have gotten the message", () => {
-      firstLambdaMessage.should.eql({...triggerMessage, data: []});
+      firstLambdaMessage.should.eql({ ...triggerMessage, data: [] });
     });
 
     And("the second lambda should have gotten the message and data from first lambda", () => {
@@ -389,9 +376,9 @@ Feature("Broker sequence", () => {
         data: [
           {
             id: "step-1-was-here",
-            type: "step-1"
-          }
-        ]
+            type: "step-1",
+          },
+        ],
       });
     });
   });
