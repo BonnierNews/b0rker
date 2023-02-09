@@ -76,6 +76,7 @@ Feature("Resume message", () => {
         key: "sequence.test.perform.resume-step",
         message: {
           ...triggerMessage,
+          correlationId: last.message.message.correlationId,
           data: [],
         },
       });
