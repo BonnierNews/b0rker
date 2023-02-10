@@ -34,7 +34,13 @@ jobs:
         NODE_ENV: "test"
 
     - name: Run Tests
-      run: npm test
+      run: npm run coverage
+      env:
+        NODE_ENV: "test"
+        CI: true
+
+    - name: Check coverage
+      run: npm run check-coverage
       env:
         NODE_ENV: "test"
         CI: true
