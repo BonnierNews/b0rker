@@ -49,5 +49,10 @@ Feature("Reject message", () => {
       deadLetterMessage.topic.should.eql(config.deadLetterTopic);
       deadLetterMessage.attributes.key.should.eql("sequence.advertisement-order.perform.step-1");
     });
+
+    And("that message should preserve the original topic", () => {
+      const deadLetterMessage = fakePubSub.recordedMessages().pop();
+      deadLetterMessage.attributes.topic.should.eql("b0rker");
+    });
   });
 });

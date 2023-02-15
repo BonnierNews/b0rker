@@ -96,6 +96,10 @@ Feature("Broker sequence with 'run'", () => {
       last.message.data.length.should.eql(3);
     });
 
+    And("last message should contain the original topic", () => {
+      last.attributes.topic.should.eql("b0rker");
+    });
+
     And("they should all have the same correlationId, despite not sending any", () => {
       correlationIds.every((val, _, arr) => val === arr[0]).should.eql(true);
     });
