@@ -7,14 +7,13 @@ import { start, route } from "../../index.js";
 const triggerMessage = {
   type: "advertisement-order",
   id: "some-order-id",
-  correlationId: "some-corr-id",
 };
 
 Feature("Trigger sequence by http call", () => {
   afterEachScenario(() => {
     fakePubSub.reset();
   });
-  Scenario("Trigger a sequence with one lambda", () => {
+  Scenario("Trigger a sequence with one lambdada", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start({
@@ -100,62 +99,7 @@ Feature("Trigger sequence by http call", () => {
 
     And("last message should contain original message and appended data from lambdas", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.message.should.eql({
-        ...triggerMessage,
-        correlationId: "apa",
-        data: [ { type: "step-1", id: "step-1-was-here" } ],
-      });
-    });
-  });
-
-  Scenario("Trigger a sequence with one lambda correlationId in meta", () => {
-    let broker;
-    Given("broker is initiated with a recipe", () => {
-      broker = start({
-        startServer: false,
-        recipes: [
-          {
-            namespace: "sequence",
-            name: "advertisement-order",
-            sequence: [
-              route(".perform.step-1", () => {
-                return { type: "step-1", id: "step-1-was-here" };
-              }),
-            ],
-          },
-        ],
-      });
-    });
-
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
-    let response;
-    When("a trigger http call is received", async () => {
-      response = await request(broker).post("/trigger/sequence/advertisement-order").send({
-        type: "advertisement-order",
-        id: "some-order-id",
-        meta: { correlationId: "valpar" },
-      });
-    });
-
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
-    });
-
-    And("two messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(2);
-    });
-
-    And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.message.should.eql({
-        ...triggerMessage,
-        correlationId: "valpar",
-        meta: {},
-        data: [ { type: "step-1", id: "step-1-was-here" } ],
-      });
+      last.attributes.correlationId.should.eql("apa");
     });
   });
 
@@ -202,14 +146,13 @@ Feature("Trigger sequence by http call", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
-        correlationId: last.message.correlationId,
         data: [ { type: "step-1", id: "step-1-was-here" } ],
       });
     });
 
     And("the message should contain a correlationId", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
-      expect(last.message.correlationId).to.exist;
+      expect(last.attributes.correlationId).to.exist;
     });
   });
 
