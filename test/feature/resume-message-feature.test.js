@@ -63,7 +63,6 @@ Feature("Resume message", () => {
     });
 
     And("there should be a processed message", () => {
-      // console.log(fakePubSub.recordedMessageHandlerResponses());
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.key.should.eql("sequence.test.processed");
       last.message.data.should.eql([ { type: "some-type", id: "some-id" } ]);
@@ -76,7 +75,6 @@ Feature("Resume message", () => {
         key: "sequence.test.perform.resume-step",
         message: {
           ...triggerMessage,
-          correlationId: last.message.message.correlationId,
           data: [],
         },
       });

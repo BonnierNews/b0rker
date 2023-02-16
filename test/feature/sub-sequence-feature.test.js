@@ -67,8 +67,8 @@ Feature("Child proccesses", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(
         broker,
-        { triggerMessage, correlationId: "abc123" },
-        { key: "trigger.sequence.test" }
+        { triggerMessage },
+        { key: "trigger.sequence.test", correlationId: "abc123" }
       );
     });
 
@@ -89,7 +89,6 @@ Feature("Child proccesses", () => {
     And("the process data should be saved in DB", () => {
       jobStorage.getDB()[parentCorrId].message.should.eql({
         triggerMessage,
-        correlationId: "abc123",
         data: [
           {
             id: "123",

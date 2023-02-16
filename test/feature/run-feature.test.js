@@ -107,7 +107,6 @@ Feature("Broker sequence with 'run'", () => {
     And("last message should contain original message and appended data from lambdas", () => {
       last.message.should.eql({
         ...triggerMessage,
-        correlationId: correlationIds[0],
         data: [
           { type: "step-1", id: "step-1-was-here" },
           { type: "step-2", id: "step-2-was-here" },
