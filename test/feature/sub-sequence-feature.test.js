@@ -68,7 +68,8 @@ Feature("Child proccesses", () => {
       response = await fakePubSub.triggerMessage(
         broker,
         { triggerMessage },
-        { key: "trigger.sequence.test", correlationId: "abc123" }
+        // parentCorrelationId being undefined below should not affect the outcome
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
       );
     });
 
