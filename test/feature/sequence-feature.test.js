@@ -37,7 +37,11 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
+        key: "trigger.sequence.advertisement-order",
+        correlationId: "some-correlation-id",
+        parentCorrelationId: undefined,
+      });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -50,6 +54,11 @@ Feature("Broker sequence", () => {
 
     And("last message should contain original message and appended data from lambdas", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.eql({
+        correlationId: "some-correlation-id",
+        key: "sequence.advertisement-order.processed",
+        topic: "b0rker",
+      });
       last.message.should.eql({
         ...triggerMessage,
         data: [ { type: "step-1", id: "step-1-was-here" } ],
