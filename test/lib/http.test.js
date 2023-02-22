@@ -20,6 +20,13 @@ describe("http", () => {
       result.should.eql({ ok: true });
     });
   });
+  describe("google auth", () => {
+    it("should append auth header", async () => {
+      fakeApi.get("/some/path").matchHeader("Authorization", "Bearer some-gcp-token").reply(200, { ok: true });
+      const result = await http.asserted.get({ baseUrl, path: "/some/path", audience: "some-audience" });
+      result.should.eql({ ok: true });
+    });
+  });
   describe("asserted", () => {
     const correlationId = "http-test-asserted";
 
