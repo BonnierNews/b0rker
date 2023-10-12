@@ -121,6 +121,69 @@ Feature("Broker sequence", () => {
     });
   });
 
+  Scenario("Trigger an unrecoverable sequence with multiple lambdas", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "advertisement-order",
+            sequence: [
+              route(".perform.step-1", () => {
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+              route(".perform.step-2", (message, context) => {
+                context.unrecoverableUnless(false, "some error");
+                return { type: "step-2", id: "step-2-was-here" };
+              }),
+            ],
+            unrecoverable: [
+              route("*", () => {
+                return { type: "unrecoverable", id: "unrecoverable-handler" };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    Given("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("four messages should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(4);
+    });
+
+    And("last message should contain original message and appended data from lambdas", () => {
+      fakePubSub.recordedMessages().map((m) => m.attributes.key).should.eql([
+        "sequence.advertisement-order.perform.step-1",
+        "sequence.advertisement-order.perform.step-2",
+        "sequence.advertisement-order.perform.step-2.unrecoverable",
+        "sequence.advertisement-order.perform.step-2.unrecoverable.processed",
+      ]);
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.message.should.eql({
+        ...triggerMessage,
+        data: [
+          { type: "step-1", id: "step-1-was-here" },
+          { type: "unrecoverable", id: "unrecoverable-handler" },
+        ],
+      });
+    });
+  });
+
   Scenario("Return array from handler", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
