@@ -1,4 +1,9 @@
 {
-  "root": true,
-  "extends": [ "exp" ]
+    "root": true,
+    "extends": [
+        "exp"
+    ],
+    "plugins": [
+        "json"
+    ]
 }
