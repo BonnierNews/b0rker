@@ -176,6 +176,7 @@ Feature("Broker sequence", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
+        error: { message: "some error" },
         data: [
           { type: "step-1", id: "step-1-was-here" },
           { type: "unrecoverable", id: "unrecoverable-handler" },

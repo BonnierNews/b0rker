@@ -60,7 +60,7 @@ Feature("Unrecoverable message", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", (message, { unrecoverableUnless }) => {
-                unrecoverableUnless(false);
+                unrecoverableUnless(false, "this is an error message");
               }),
             ],
           },
@@ -83,6 +83,7 @@ Feature("Unrecoverable message", () => {
 
     And("that message should have published with an unrecoverable suffix", () => {
       const messages = fakePubSub.recordedMessages().pop();
+      messages.message.error.message.should.eql("this is an error message");
       messages.attributes.key.should.eql("sequence.advertisement-order.perform.step-1.unrecoverable");
     });
   });
