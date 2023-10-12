@@ -25,7 +25,7 @@ export function start({ recipes, startServer = true }) {
 
   router.use((req, _, next) => {
     // middleware to handle requests via a proxy
-    if (req.url.startsWith(`/${config.appName}`)) {
+    if (config.appName?.length && req.url.startsWith(`/${config.appName}`)) {
       req.url = req.url.replace(`/${config.appName}`, "");
     }
     next();
