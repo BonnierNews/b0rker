@@ -23,7 +23,7 @@ Feature("Reject message", () => {
             name: "advertisement-order",
             sequence: [
               route(".perform.step-1", (message, { rejectIf }) => {
-                rejectIf(true);
+                rejectIf(true, "rejected because..");
               }),
             ],
           },
@@ -47,6 +47,7 @@ Feature("Reject message", () => {
     And("that message should have published to dead letter queue", () => {
       const deadLetterMessage = fakePubSub.recordedMessages().pop();
       deadLetterMessage.topic.should.eql(config.deadLetterTopic);
+      deadLetterMessage.message.error.should.eql({ message: "rejected because.." });
       deadLetterMessage.attributes.key.should.eql("sequence.advertisement-order.perform.step-1");
     });
 
