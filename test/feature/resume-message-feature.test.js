@@ -11,7 +11,7 @@ const triggerMessage = {
 
 Feature("Resume message", () => {
   beforeEachScenario(() => {
-    fakeGcpAuth.enableGetRequestHeaders();
+    fakeGcpAuth.authenticated();
     nock.disableNetConnect();
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
   });
