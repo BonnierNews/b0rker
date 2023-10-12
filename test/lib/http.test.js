@@ -40,16 +40,16 @@ describe("http", () => {
 
     it("should do get-requests", async () => {
       fakeApi.get("/some/path").reply(200, { ok: true });
-      const result = await http.asserted.get({ baseUrl: config.gcpProxy.url, path: "/some/path", correlationId });
+      const result = await http.asserted.get({ path: "/some/path", correlationId });
       result.should.eql({ ok: true });
     });
 
     it("should do get-requests with query-string", async () => {
       fakeApi.get("/some/path").query({ q: "some-query" }).times(2).reply(200, { ok: true });
-      const result = await http.asserted.get({ baseUrl: config.gcpProxy.url, path: "/some/path", correlationId, qs: { q: "some-query" } });
+      const result = await http.asserted.get({ path: "/some/path", correlationId, qs: { q: "some-query" } });
       result.should.eql({ ok: true });
 
-      const next = await http.asserted.get({ baseUrl: config.gcpProxy.url, path: "/some/path?q=some-query", correlationId });
+      const next = await http.asserted.get({ path: "/some/path?q=some-query", correlationId });
       next.should.eql({ ok: true });
     });
 
