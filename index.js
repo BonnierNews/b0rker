@@ -16,12 +16,12 @@ export function route(key, fn) {
   return result;
 }
 
-export function start({ recipes, startServer = true }) {
+export function start({ recipes, triggers, startServer = true }) {
   const router = expressPromiseRouter();
   const app = express();
   app.use(express.json());
 
-  const recipeMap = init(recipes);
+  const recipeMap = init(recipes, triggers);
 
   router.use((req, _, next) => {
     // middleware to handle requests via a proxy
@@ -38,6 +38,7 @@ export function start({ recipes, startServer = true }) {
   router.post("/resume-message", resumeHandler);
   router.post("/message", messageHandler.bind(messageHandler, recipeMap));
   router.post("/trigger/:namespace/:sequence", triggerHandler.bind(triggerHandler, recipeMap));
+  router.post("/trigger/:name", triggerHandler.bind(triggerHandler, recipeMap));
 
   app.use(router);
 

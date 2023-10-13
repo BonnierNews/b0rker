@@ -115,4 +115,60 @@ Feature("Broker sequence with 'run'", () => {
       });
     });
   });
+
+  Scenario("Trigger a sequence from a trigger handler", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": (message) => {
+            const { type } = message;
+            if (type === "advertisement-order") {
+              return { type: "trigger", key: "trigger.sequence.advertisement-order" };
+            }
+            throw new Error("Unknown type");
+          },
+        },
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "advertisement-order",
+            sequence: [
+              route(".perform.step-1", () => {
+                return { type: "step-1", id: "step-1-was-here" };
+              }),
+              route(".perform.step-2", () => {
+                return { type: "step-2", id: "step-2-was-here" };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+    const triggerMessage = {
+      type: "advertisement-order",
+      id: "some-order-id",
+      correlationId: "some-corr-id",
+    };
+
+    let last;
+    When("a trigger message is received", async () => {
+      last = await runSequence(broker, "trigger.order", triggerMessage);
+    });
+
+    And("four messages should have been published", () => {
+      last.message.data.length.should.eql(2);
+    });
+
+    And("last message should contain original message and appended data from lambdas", () => {
+      last.message.should.eql({
+        ...triggerMessage,
+        data: [
+          { type: "step-1", id: "step-1-was-here" },
+          { type: "step-2", id: "step-2-was-here" },
+        ],
+      });
+    });
+  });
 });
