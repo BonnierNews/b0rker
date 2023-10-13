@@ -118,4 +118,52 @@ Feature("Make http call from lambda", () => {
       last.message.data.should.eql([ { type: "testing", id: "123" } ]);
     });
   });
+
+  Scenario("Trigger a trigger handler from http, broken response key", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": () => {
+            return { type: "trigger", key: "trigger.advertisement-order" };
+          },
+        },
+        recipes: [],
+      });
+    });
+
+    let response;
+    When("a trigger http call is received for an unknown sequence", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+    });
+
+    Then("the status code should be 400 Bad Request", () => {
+      response.statusCode.should.eql(400, response.text);
+    });
+  });
+
+  Scenario("Trigger a trigger handler from http, source for sub-sequence is not an array", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": () => {
+            return { type: "trigger", key: "trigger.sub-sequence.some-order", source: {} };
+          },
+        },
+        recipes: [],
+      });
+    });
+
+    let response;
+    When("a trigger http call is received for an unknown sequence", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+    });
+
+    Then("the status code should be 400 Bad Request", () => {
+      response.statusCode.should.eql(400, response.text);
+    });
+  });
 });

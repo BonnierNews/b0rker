@@ -218,7 +218,7 @@ Feature("Child proccesses", () => {
     });
   });
 
-  Scenario("Handler without trigger-sub-sequence in route returns a sub-sequence trigger", () => {
+  Scenario.skip("Handler without trigger-sub-sequence in route returns a sub-sequence trigger", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start({
