@@ -157,7 +157,7 @@ Feature("Broker sequence with 'run'", () => {
       last = await runSequence(broker, "trigger.order", triggerMessage);
     });
 
-    And("four messages should have been published", () => {
+    Then("four messages should have been published", () => {
       last.message.data.length.should.eql(2);
     });
 

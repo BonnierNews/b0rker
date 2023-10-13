@@ -1,7 +1,5 @@
 import request from "supertest";
 import { fakePubSub } from "@bonniernews/lu-test";
-// import { expect } from "chai";
-// import config from "exp-config";
 
 import { start } from "../../index.js";
 
