@@ -2,9 +2,9 @@ import express from "express";
 import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
 import assert from "assert";
+import { logger } from "lu-logger";
 
 import { init } from "./lib/recipe-repo.js";
-import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
 import { trigger, triggerBulk } from "./lib/trigger-handler.js";
@@ -55,7 +55,7 @@ export function start({ recipes, triggers, startServer = true }) {
   if (startServer) {
     const port = process.env.PORT || 8080;
     app.listen(port, () => {
-      buildLogger().info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
+      logger.info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
     });
   }
 
