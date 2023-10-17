@@ -1,4 +1,9 @@
 {
+  "logging": {
+    "log": "file",
+    "logLevel": "debug",
+    "logJson": true
+  },
   "topic": "b0rker",
   "appName": "b0rker",
   "deadLetterTopic": "dead-letter-topic",
@@ -12,8 +17,6 @@
     "url": "https://some-base.local",
     "audience": "some-aud"
   },
-  "livesInGcp": [
-    "some"
-  ],
+  "livesInGcp": ["some"],
   "setXThrottle": true
 }
