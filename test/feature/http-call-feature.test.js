@@ -166,4 +166,103 @@ Feature("Make http call from lambda", () => {
       response.statusCode.should.eql(400, response.text);
     });
   });
+
+  Scenario("Trigger a trigger handler from http, triggering multiple sequences", () => {
+    let broker;
+
+    function rewriteMessage(message) {
+      delete message.attributes?.someAttr;
+      return message;
+    }
+
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": (message) => {
+            return {
+              type: "trigger",
+              key: "trigger.sequence.a-notification",
+              triggerMessages: [
+                { ...rewriteMessage(message), target: "t1" },
+                { ...rewriteMessage(message), target: "t2" },
+              ],
+            };
+          },
+        },
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "a-notification",
+            sequence: [
+              route(".perform.notification", (message, { rejectIf }) => {
+                rejectIf(message.attributes?.someAttr, "someAttr is not allowed");
+                return { type: "notification", id: message.id };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger http call is received for an unknown sequence", async () => {
+      response = await fakePubSub.triggerMessage(broker, { ...triggerMessage, attributes: { keepAttr: 1, someAttr: 2 } }, { key: "trigger.order" });
+    });
+
+    Then("the status code should be 200 Ok", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("we should have published 4 messages", () => {
+      fakePubSub.recordedMessages().length.should.eql(4);
+    });
+
+    And("we should have recorded 2 processed messages", () => {
+      fakePubSub.recordedMessages()
+        .filter(({ attributes }) => attributes.key === "sequence.a-notification.processed")
+        .length.should.eql(2);
+    });
+  });
+
+  Scenario("Trigger a trigger handler from http, bad result from trigger", () => {
+    let broker;
+
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": () => {
+            return {
+              type: "trigger",
+              key: "trigger.sequence.a-notification",
+              triggerMessages: { type: "some-type", id: "123" },
+            };
+          },
+        },
+        recipes: [],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger http call is received for an unknown sequence", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+    });
+
+    Then("the status code should be 400 Bad Request", () => {
+      response.statusCode.should.eql(400, response.text);
+    });
+
+    And("we should have published 4 messages", () => {
+      fakePubSub.recordedMessages().length.should.eql(0);
+    });
+  });
 });
