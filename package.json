@@ -33,6 +33,7 @@
     "express-promise-router": "^4.1.1",
     "google-auth-library": "^8.7.0",
     "joi": "^17.7.0",
+    "lu-logger": "github:BonnierNews/lu-logger#semver:^7.2.0",
     "pino": "^8.7.0",
     "uuid": "^9.0.0",
     "@bonniernews/gcp-push-metrics": "^3.2.1"
