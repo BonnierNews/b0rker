@@ -8,6 +8,7 @@ import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import resumeHandler from "./lib/resume-handler.js";
 import { trigger, triggerBulk } from "./lib/trigger-handler.js";
+import { debugMetaMiddleware } from "./lib/logging.js";
 
 export { default as buildContext } from "./lib/context.js";
 
@@ -36,6 +37,7 @@ export function start({ recipes, triggers, startServer = true }) {
     }
     next();
   });
+  app.use(debugMetaMiddleware);
 
   router.get("/", (req, res) => {
     res.send("Im alive - som fan!");
