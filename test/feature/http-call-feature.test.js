@@ -261,7 +261,40 @@ Feature("Make http call from lambda", () => {
       response.statusCode.should.eql(400, response.text);
     });
 
-    And("we should have published 4 messages", () => {
+    And("we should have published 0 messages", () => {
+      fakePubSub.recordedMessages().length.should.eql(0);
+    });
+  });
+
+  Scenario("Trigger a trigger handler from http, empty result from trigger", () => {
+    let broker;
+
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        triggers: {
+          "trigger.order": () => {
+            return;
+          },
+        },
+        recipes: [],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger http call is received for an unknown sequence", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("we should have published 0 messages", () => {
       fakePubSub.recordedMessages().length.should.eql(0);
     });
   });
