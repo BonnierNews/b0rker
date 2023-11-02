@@ -1,6 +1,7 @@
 import express from "express";
 import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
+import assert from "assert";
 
 import { init } from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
@@ -17,6 +18,9 @@ export function route(key, fn) {
 }
 
 export function start({ recipes, triggers, startServer = true }) {
+
+  assert(config.appName, "appName must be set in config");
+
   const router = expressPromiseRouter();
   const app = express();
   app.use(express.json());
