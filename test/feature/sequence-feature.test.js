@@ -455,4 +455,48 @@ Feature("Broker sequence", () => {
       });
     });
   });
+
+  Scenario("Sequence with a path instead of function", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "advertisement-order",
+            sequence: [
+              route(".perform.step-1", "test/helpers/dynamic-import-fn.js"),
+              route(".perform.step-2", "./test/helpers/dynamic-import-fn.js"),
+            ],
+          },
+        ],
+      });
+    });
+
+    Given("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("two messages should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(3);
+    });
+
+    And("last message should contain original message and appended data from lambdas", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.message.should.eql({
+        ...triggerMessage,
+        data: [ { type: "dynamic-import-fn", id: 1 }, { type: "dynamic-import-fn", id: 1 } ],
+      });
+    });
+  });
 });

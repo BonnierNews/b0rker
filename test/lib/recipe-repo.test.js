@@ -133,23 +133,23 @@ describe("recipes-repo", () => {
   });
 
   describe("getHandlerFunction", () => {
-    it("should find a fn for a key", () => {
-      repo.handler("event.baz.perform.one").should.eql(passThru);
-      repo.handler("event.baz.perform.two").should.eql(passThru);
-      repo.handler("event.baz.perform.three").should.eql(passThru);
-      repo.handler("event.bar.validate.one").should.eql(passThru);
-      repo.handler("event.bar.perform.two").should.eql(passThru);
+    it("should find a fn for a key", async () => {
+      (await repo.handler("event.baz.perform.one")).should.eql(passThru);
+      (await repo.handler("event.baz.perform.two")).should.eql(passThru);
+      (await repo.handler("event.baz.perform.three")).should.eql(passThru);
+      (await repo.handler("event.bar.validate.one")).should.eql(passThru);
+      (await repo.handler("event.bar.perform.two")).should.eql(passThru);
     });
 
-    it("should not find a fn for an unknown key", () => {
-      should.not.exist(repo.handler("event.baz.epic-key"));
+    it("should not find a fn for an unknown key", async () => {
+      should.not.exist((await repo.handler("event.baz.epic-key")));
     });
 
-    it("should find a fn for a borrowed key", () => {
-      repo.handler("event.bar.event.baz.perform.one").should.eql(passThru);
+    it("should find a fn for a borrowed key", async () => {
+      (await repo.handler("event.bar.event.baz.perform.one")).should.eql(passThru);
     });
 
-    it("should find a fn for a borrowed key even if defined before borrow", () => {
+    it("should find a fn for a borrowed key even if defined before borrow", async () => {
       const otherRepo = init([
         {
           namespace: "event",
@@ -162,7 +162,7 @@ describe("recipes-repo", () => {
           sequence: [ route(".perform.two", passThru) ],
         },
       ]);
-      otherRepo.handler("event.one.event.two.perform.two").should.eql(passThru);
+      (await otherRepo.handler("event.one.event.two.perform.two")).should.eql(passThru);
     });
   });
 
@@ -219,17 +219,17 @@ describe("recipes-repo", () => {
     before(() => {
       repo = init(events, triggers);
     });
-    it("should find a fn for a key", () => {
-      repo.unrecoverableHandler("event.unrecoverable.validate.one").should.eql(unrecoverable);
-      repo.unrecoverableHandler("event.unrecoverable.perform.two").should.eql(unrecoverable);
+    it("should find a fn for a key", async () => {
+      (await repo.unrecoverableHandler("event.unrecoverable.validate.one")).should.eql(unrecoverable);
+      (await repo.unrecoverableHandler("event.unrecoverable.perform.two")).should.eql(unrecoverable);
     });
 
-    it("should not find a fn for an unknown key", () => {
-      should.not.exist(repo.unrecoverableHandler("event.unrecoverable.epic-key"));
+    it("should not find a fn for an unknown key", async () => {
+      should.not.exist((await repo.unrecoverableHandler("event.unrecoverable.epic-key")));
     });
 
-    it("should find a fn for a borrowed key", () => {
-      repo.unrecoverableHandler("event.unrecoverable.event.baz.perform.one").should.eql(unrecoverable);
+    it("should find a fn for a borrowed key", async () => {
+      (await repo.unrecoverableHandler("event.unrecoverable.event.baz.perform.one")).should.eql(unrecoverable);
     });
   });
 });
