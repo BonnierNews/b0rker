@@ -1,7 +1,7 @@
 import nock from "nock";
 import { fakeGcpAuth } from "@bonniernews/lu-test";
 import config from "exp-config";
-import { Readable, PassThrough } from "stream";
+import { Readable } from "stream";
 
 import http from "../../lib/http.js";
 
