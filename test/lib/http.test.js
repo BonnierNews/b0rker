@@ -1,6 +1,7 @@
 import nock from "nock";
 import { fakeGcpAuth } from "@bonniernews/lu-test";
 import config from "exp-config";
+import { Readable } from "stream";
 
 import http from "../../lib/http.js";
 
@@ -51,6 +52,18 @@ describe("http", () => {
 
       const next = await http.asserted.get({ path: "/some/path?q=some-query", correlationId });
       next.should.eql({ ok: true });
+    });
+
+    it("should do stream get-requests", async () => {
+      const content = "some content\nsome other content\n";
+      fakeApi.get("/some/path").reply(200, Readable.from([ content ]));
+      const result = await http.asserted.get({ path: "/some/path", responseType: "stream", correlationId });
+      result.should.be.instanceOf(Readable);
+      const chunks = [];
+      for await (const chunk of result) {
+        chunks.push(Buffer.from(chunk));
+      }
+      Buffer.concat(chunks).toString("utf-8").should.eql(content);
     });
 
     it("should fail on 500", (done) => {
@@ -134,6 +147,31 @@ describe("http", () => {
       const next = await http.get({ path: "/some/path?q=some-query", correlationId });
       next.statusCode.should.eql(200);
       next.body.should.eql({ ok: true });
+    });
+
+    it("should do stream get-requests", async () => {
+      const content = "some content\nsome other content\n";
+      fakeApi.get("/some/path").reply(200, Readable.from([ content ]));
+      const result = await http.get({ path: "/some/path", responseType: "stream", correlationId });
+      result.statusCode.should.eql(200);
+      result.body.should.be.instanceOf(Readable);
+      const chunks = [];
+      for await (const chunk of result.body) {
+        chunks.push(Buffer.from(chunk));
+      }
+      Buffer.concat(chunks).toString("utf-8").should.eql(content);
+    });
+
+    it("should do stream post-requests", async () => {
+      const content = "some content\nsome other content\n";
+      fakeApi.post("/some/path").reply(200, { ok: true });
+      const result = await http.post({
+        path: "/some/path",
+        body: Readable.from([ content ]),
+        correlationId,
+      });
+      result.statusCode.should.eql(200);
+      result.body.should.eql({ ok: true });
     });
 
     it("should not fail on 500", async () => {

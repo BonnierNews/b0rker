@@ -1,6 +1,6 @@
 {
   "name": "@bonniernews/b0rker",
-  "version": "4.4.2",
+  "version": "4.5.0",
   "engines": {
     "node": ">=16 <=18"
   },
@@ -35,7 +35,7 @@
     "joi": "^17.7.0",
     "pino": "^8.7.0",
     "uuid": "^9.0.0",
-    "@bonniernews/gcp-push-metrics": "^3.1.0"
+    "@bonniernews/gcp-push-metrics": "^3.2.1"
   },
   "devDependencies": {
     "@bonniernews/lu-test": "^4.0.0",
