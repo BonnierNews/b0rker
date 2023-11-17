@@ -1,5 +1,3 @@
-import { expect } from "chai";
-
 import { init } from "../../lib/recipe-repo.js";
 import { route } from "../../index.js";
 import dynamicImportFn from "../helpers/dynamic-import-fn.js";
