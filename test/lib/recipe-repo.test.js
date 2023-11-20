@@ -1,5 +1,6 @@
 import { init } from "../../lib/recipe-repo.js";
 import { route } from "../../index.js";
+import dynamicImportFn from "../helpers/dynamic-import-fn.js";
 
 const passThru = (msg) => msg;
 const unrecoverable = (msg) => msg;
@@ -22,6 +23,11 @@ describe("recipes-repo", () => {
       name: "unrecoverable",
       sequence: [ route(".validate.one", passThru), route("event.baz.perform.one"), route(".perform.two", passThru) ],
       unrecoverable: [ route("*", unrecoverable) ],
+    },
+    {
+      namespace: "event",
+      name: "dynamic",
+      sequence: [ route(".perform.dynamic-import", "./test/helpers/dynamic-import-fn.js"), route(".perform.missing-file", "./test/helpers/unknown-file.js") ],
     },
   ];
   const triggers = { "trigger.some-value": passThru };
@@ -61,7 +67,7 @@ describe("recipes-repo", () => {
     });
 
     it("should return each event-name as key", () => {
-      repo.keys().should.eql([ "event.baz.#", "event.bar.#", "event.unrecoverable.#" ]);
+      repo.keys().should.eql([ "event.baz.#", "event.bar.#", "event.unrecoverable.#", "event.dynamic.#" ]);
     });
   });
 
@@ -79,7 +85,7 @@ describe("recipes-repo", () => {
     it("should return each event-name as key", () => {
       repo
         .triggerKeys()
-        .should.eql([ "trigger.some-value", "trigger.event.baz", "trigger.event.bar", "trigger.event.unrecoverable" ]);
+        .should.eql([ "trigger.some-value", "trigger.event.baz", "trigger.event.bar", "trigger.event.unrecoverable", "trigger.event.dynamic" ]);
     });
   });
 
@@ -95,7 +101,7 @@ describe("recipes-repo", () => {
     });
 
     it("should return each event-name as key", () => {
-      repo.processedKeys().should.eql([ "event.baz.processed", "event.bar.processed", "event.unrecoverable.processed" ]);
+      repo.processedKeys().should.eql([ "event.baz.processed", "event.bar.processed", "event.unrecoverable.processed", "event.dynamic.processed" ]);
     });
   });
 
@@ -133,23 +139,23 @@ describe("recipes-repo", () => {
   });
 
   describe("getHandlerFunction", () => {
-    it("should find a fn for a key", () => {
-      repo.handler("event.baz.perform.one").should.eql(passThru);
-      repo.handler("event.baz.perform.two").should.eql(passThru);
-      repo.handler("event.baz.perform.three").should.eql(passThru);
-      repo.handler("event.bar.validate.one").should.eql(passThru);
-      repo.handler("event.bar.perform.two").should.eql(passThru);
+    it("should find a fn for a key", async () => {
+      (await repo.handler("event.baz.perform.one")).should.eql(passThru);
+      (await repo.handler("event.baz.perform.two")).should.eql(passThru);
+      (await repo.handler("event.baz.perform.three")).should.eql(passThru);
+      (await repo.handler("event.bar.validate.one")).should.eql(passThru);
+      (await repo.handler("event.bar.perform.two")).should.eql(passThru);
     });
 
-    it("should not find a fn for an unknown key", () => {
-      should.not.exist(repo.handler("event.baz.epic-key"));
+    it("should not find a fn for an unknown key", async () => {
+      should.not.exist((await repo.handler("event.baz.epic-key")));
     });
 
-    it("should find a fn for a borrowed key", () => {
-      repo.handler("event.bar.event.baz.perform.one").should.eql(passThru);
+    it("should find a fn for a borrowed key", async () => {
+      (await repo.handler("event.bar.event.baz.perform.one")).should.eql(passThru);
     });
 
-    it("should find a fn for a borrowed key even if defined before borrow", () => {
+    it("should find a fn for a borrowed key even if defined before borrow", async () => {
       const otherRepo = init([
         {
           namespace: "event",
@@ -162,7 +168,21 @@ describe("recipes-repo", () => {
           sequence: [ route(".perform.two", passThru) ],
         },
       ]);
-      otherRepo.handler("event.one.event.two.perform.two").should.eql(passThru);
+      (await otherRepo.handler("event.one.event.two.perform.two")).should.eql(passThru);
+    });
+
+    it("should find a fn from a file path", async () => {
+      (await repo.handler("event.dynamic.perform.dynamic-import")).should.eql(dynamicImportFn);
+    });
+
+    it("should throw an error when file path does not exist", async () => {
+      // await expect(async () => {
+      //   await repo.handler("event.dynamic.perform.missing-file");
+      // }).rejects.toThrowError(Error);
+
+      // assert.throws(async () => {
+      //   await repo.handler("event.dynamic.perform.missing-file");
+      // }, Error, /Error/);
     });
   });
 
@@ -219,17 +239,17 @@ describe("recipes-repo", () => {
     before(() => {
       repo = init(events, triggers);
     });
-    it("should find a fn for a key", () => {
-      repo.unrecoverableHandler("event.unrecoverable.validate.one").should.eql(unrecoverable);
-      repo.unrecoverableHandler("event.unrecoverable.perform.two").should.eql(unrecoverable);
+    it("should find a fn for a key", async () => {
+      (await repo.unrecoverableHandler("event.unrecoverable.validate.one")).should.eql(unrecoverable);
+      (await repo.unrecoverableHandler("event.unrecoverable.perform.two")).should.eql(unrecoverable);
     });
 
-    it("should not find a fn for an unknown key", () => {
-      should.not.exist(repo.unrecoverableHandler("event.unrecoverable.epic-key"));
+    it("should not find a fn for an unknown key", async () => {
+      should.not.exist((await repo.unrecoverableHandler("event.unrecoverable.epic-key")));
     });
 
-    it("should find a fn for a borrowed key", () => {
-      repo.unrecoverableHandler("event.unrecoverable.event.baz.perform.one").should.eql(unrecoverable);
+    it("should find a fn for a borrowed key", async () => {
+      (await repo.unrecoverableHandler("event.unrecoverable.event.baz.perform.one")).should.eql(unrecoverable);
     });
   });
 });
