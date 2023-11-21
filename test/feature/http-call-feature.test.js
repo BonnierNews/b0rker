@@ -183,7 +183,7 @@ Feature("Make http call from lambda", () => {
             return {
               type: "trigger",
               key: "trigger.sequence.a-notification",
-              triggerMessages: [
+              messages: [
                 { ...rewriteMessage(message), target: "t1" },
                 { ...rewriteMessage(message), target: "t2" },
               ],
@@ -240,7 +240,7 @@ Feature("Make http call from lambda", () => {
             return {
               type: "trigger",
               key: "trigger.sequence.a-notification",
-              triggerMessages: { type: "some-type", id: "123" },
+              messages: { type: "some-type", id: "123" },
             };
           },
         },

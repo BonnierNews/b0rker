@@ -472,7 +472,7 @@ Feature("Broker sequence", () => {
                 return {
                   type: "trigger",
                   key: "sequence.apples",
-                  triggerMessages: [
+                  messages: [
                     { id: 1, type: "apples-1" },
                     { id: 2, type: "apples-2" },
                     { id: 3, type: "apples-3" },
@@ -515,7 +515,7 @@ Feature("Broker sequence", () => {
       fakePubSub.recordedMessages().filter(({ attributes }) => attributes.key.endsWith(".processed")).length.should.eql(4);
     });
 
-    And("last message should contain original message and appended data from lambdas", () => {
+    And("last message should contain original message and appended data from the first lambda", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.should.eql({
         correlationId: "some-correlation-id",
@@ -524,7 +524,7 @@ Feature("Broker sequence", () => {
       });
       last.message.should.eql({
         ...triggerMessage,
-        data: [ { type: "step-1", id: "bananas-1-was-here" }, { id: 3, type: "sequence.apples" } ],
+        data: [ { type: "step-1", id: "bananas-1-was-here" } ],
       });
     });
   });
