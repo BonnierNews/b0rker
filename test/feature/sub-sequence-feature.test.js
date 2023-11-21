@@ -37,7 +37,7 @@ Feature("Child proccesses", () => {
                 type: "trigger",
                 key: "sub-sequence.test2",
                 data: [],
-                source: [ { id: "child-1" }, { id: "child-2" } ],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
@@ -96,7 +96,7 @@ Feature("Child proccesses", () => {
             type: "trigger",
             key: "sub-sequence.test2",
             data: [],
-            source: [ { id: "child-1" }, { id: "child-2" } ],
+            messages: [ { id: "child-1" }, { id: "child-2" } ],
           },
         ],
       });
@@ -232,7 +232,7 @@ Feature("Child proccesses", () => {
                 id: "123",
                 type: "trigger",
                 key: "sub-sequence.test2",
-                source: [ { id: "child-1" }, { id: "child-2" } ],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
