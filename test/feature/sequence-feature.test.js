@@ -5,7 +5,6 @@ import { start, route } from "../../index.js";
 const triggerMessage = {
   type: "advertisement-order",
   id: "some-order-id",
-  correlationId: "some-corr-id",
 };
 
 Feature("Broker sequence", () => {
@@ -452,6 +451,80 @@ Feature("Broker sequence", () => {
             type: "step-1",
           },
         ],
+      });
+    });
+  });
+
+  Scenario("Trigger a sequence and that triggers new messages from lambda", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "bananas",
+            sequence: [
+              route(".perform.step-1", () => {
+                return { type: "step-1", id: "bananas-1-was-here" };
+              }),
+              route(".perform.step-2", () => {
+                return {
+                  type: "trigger",
+                  key: "sequence.apples",
+                  messages: [
+                    { id: 1, type: "apples-1" },
+                    { id: 2, type: "apples-2" },
+                    { id: 3, type: "apples-3" },
+                  ],
+                };
+              }),
+            ],
+          },
+          {
+            namespace: "sequence",
+            name: "apples",
+            sequence: [
+              route(".perform.step-1", ({ type }) => {
+                return { type: "step-1", id: type };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    Given("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.bananas", correlationId: "some-correlation-id" });
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("two messages should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(9);
+    });
+
+    And("we should have 4 processed sequences", () => {
+      fakePubSub.recordedMessages().filter(({ attributes }) => attributes.key.endsWith(".processed")).length.should.eql(4);
+    });
+
+    And("last message should contain original message and appended data from the first lambda", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.eql({
+        correlationId: "some-correlation-id",
+        key: "sequence.bananas.processed",
+        topic: "b0rker",
+      });
+      last.message.should.eql({
+        ...triggerMessage,
+        data: [ { type: "step-1", id: "bananas-1-was-here" } ],
       });
     });
   });

@@ -32,12 +32,15 @@ Feature("Child proccesses", () => {
             namespace: "sequence",
             name: "test",
             sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
               route(".trigger-sub-sequence.create-children-step", () => ({
                 id: "123",
                 type: "trigger",
                 key: "sub-sequence.test2",
                 data: [],
-                source: [ { id: "child-1" }, { id: "child-2" } ],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
@@ -78,11 +81,19 @@ Feature("Child proccesses", () => {
     });
 
     And("all messages including children should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(9);
+      fakePubSub.recordedMessages().length.should.eql(10);
     });
     And("the last message should have correct format", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.should.contain({ key: "sequence.test.processed" });
+      last.message.data.should.eql([
+        { type: "something", id: 1 },
+        {
+          id: 2,
+          type: "sub-sequence.test2.processed",
+        },
+        { type: "I am done", id: "hello" },
+      ]);
     });
     And("the children should have been added to the database and been completed", () => {
       jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(2);
@@ -92,11 +103,8 @@ Feature("Child proccesses", () => {
         triggerMessage,
         data: [
           {
-            id: "123",
-            type: "trigger",
-            key: "sub-sequence.test2",
-            data: [],
-            source: [ { id: "child-1" }, { id: "child-2" } ],
+            type: "something",
+            id: 1,
           },
         ],
       });
@@ -232,7 +240,7 @@ Feature("Child proccesses", () => {
                 id: "123",
                 type: "trigger",
                 key: "sub-sequence.test2",
-                source: [ { id: "child-1" }, { id: "child-2" } ],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
