@@ -191,22 +191,6 @@ describe("recipes-repo", () => {
         sequence: [ route(".perform.four", passThru) ],
       },
     ]);
-    // it("should key keys for sub-sequences", () => {
-    //   otherRepo
-    //     .workerQueues()
-    //     .map(({ key }) => key)
-    //     .should.eql([ "wq.trigger.sub-sequence.one", "wq.trigger.sub-sequence.two", "wq.trigger.sub-sequence.default" ]);
-    // });
-    // it("should get queuenames for sub-sequences", () => {
-    //   otherRepo
-    //     .workerQueues()
-    //     .map(({ queue }) => queue)
-    //     .should.eql([
-    //       "lu-broker-workqueue-one-test",
-    //       "lu-broker-workqueue-two-test",
-    //       "lu-broker-workqueue-default-test",
-    //     ]);
-    // });
 
     it("should get executionDelay on trigger-key", () => {
       otherRepo.executionDelay("trigger.sub-sequence.one").should.eql(22);
