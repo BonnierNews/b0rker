@@ -9,7 +9,7 @@ const triggerMessage = {
   id: "some-order-id",
 };
 
-Feature("Child proccesses", () => {
+Feature("Child processes", () => {
   beforeEachScenario(() => {
     fakeGcpAuth.authenticated();
     nock.disableNetConnect();
