@@ -23,7 +23,9 @@ export function start({ recipes, triggers, startServer = true }) {
 
   const router = expressPromiseRouter();
   const app = express();
-  app.use(express.json());
+
+  // use PubSubs message size limit
+  app.use(express.json({ limit: "32mb" }));
 
   const recipeMap = init(recipes, triggers);
 
