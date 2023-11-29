@@ -3,6 +3,7 @@
   "appName": "b0rker",
   "deadLetterTopic": "dead-letter-topic",
   "jobStorage": "memory",
+  "jobStorageBuckets": 10,
   "selfUrl": "http://self.local",
   "taskQueue": "REPLACED_BY_ENV",
   "maxResumeCount": 10,
