@@ -62,7 +62,7 @@ Feature("Child processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
@@ -146,7 +146,7 @@ Feature("Child processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
@@ -204,7 +204,7 @@ Feature("Child processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
@@ -262,7 +262,7 @@ Feature("Child processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
@@ -304,7 +304,7 @@ Feature("Child processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
