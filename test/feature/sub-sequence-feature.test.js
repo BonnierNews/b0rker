@@ -407,4 +407,195 @@ Feature("Child processes", () => {
       jobStorage.getDB().should.eql({});
     });
   });
+
+  Scenario("Starting a bunch of sub-sequences, not enough to cause contention", () => {
+    let broker;
+    const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
+    const manyChildren = [];
+    for (let index = 0; index <= 9; index++) {
+      manyChildren.push({ id: `child-${index}` });
+    }
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".trigger-sub-sequence.create-children-step", () => ({
+                id: "123",
+                type: "trigger",
+                key: "sub-sequence.test2",
+                data: [],
+                messages: manyChildren,
+              })),
+              route(".perform.resumed-after-sub-sequense", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "test2",
+            sequence: [
+              route(".perform.something-in-child", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { triggerMessage },
+        // parentCorrelationId being undefined below should not affect the outcome
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+      );
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("all messages including children should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(34);
+    });
+    And("the last message should be that the sequence is processed", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sequence.test.processed" });
+      last.message.data.should.eql([
+        { type: "something", id: 1 },
+        {
+          id: 10,
+          type: "sub-sequence.test2.processed",
+        },
+        { type: "I am done", id: "hello" },
+      ]);
+    });
+    And("the process data should be saved in DB", () => {
+      jobStorage.getDB()[parentCorrId].message.should.eql({
+        triggerMessage,
+        data: [
+          {
+            type: "something",
+            id: 1,
+          },
+        ],
+      });
+    });
+    And("all 10 children should have been started", () => {
+      jobStorage.getDB()[parentCorrId].startedJobs.length.should.eql(10);
+    });
+    And("all 10 children should have been completed", () => {
+      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(10);
+    });
+  });
+
+  Scenario("Starting a lot of sub-sequences, guaranteed contention", () => {
+    // in the test suite we set allowed contention low to make sure we get contention
+    // this test doesn't check what causes the contention, just that it is handled
+    let broker;
+    const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
+    const manyChildren = [];
+    for (let index = 0; index <= 99; index++) {
+      manyChildren.push({ id: `child-${index}` });
+    }
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".trigger-sub-sequence.create-children-step", () => ({
+                id: "123",
+                type: "trigger",
+                key: "sub-sequence.test2",
+                data: [],
+                messages: manyChildren,
+              })),
+              route(".perform.resumed-after-sub-sequense", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "test2",
+            sequence: [
+              route(".perform.something-in-child", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { triggerMessage },
+        // parentCorrelationId being undefined below should not affect the outcome
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+      );
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("all messages including children should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(302);
+    });
+    And("the last message should be the last child processed", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
+      last.message.data.should.eql([
+        { type: "I was here child-99", id: "child-99" },
+      ]);
+    });
+    And("the process data should be saved in DB", () => {
+      jobStorage.getDB()[parentCorrId].message.should.eql({
+        triggerMessage,
+        data: [
+          {
+            type: "something",
+            id: 1,
+          },
+        ],
+      });
+    });
+    And("all 100 children should have been started", () => {
+      jobStorage.getDB()[parentCorrId].startedJobs.length.should.eql(100);
+    });
+    But("none of the jobs will be listed as completed", () => {
+      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(0);
+    });
+  });
 });
