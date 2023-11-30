@@ -132,7 +132,7 @@ Feature("Grandchild processes", () => {
 
     And("the children of the first sequence should have been added to the database and been completed", () => {
       const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0";
-      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(2);
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
     });
 
     And("the first sequence process data should be saved in DB", () => {
@@ -159,7 +159,7 @@ Feature("Grandchild processes", () => {
 
     And("the children of the second sequence should have been added to the database and been completed", () => {
       const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1";
-      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(2);
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
     });
 
     And("the second sequence process data should be saved in DB", () => {

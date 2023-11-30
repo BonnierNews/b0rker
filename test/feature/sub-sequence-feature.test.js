@@ -96,7 +96,7 @@ Feature("Child processes", () => {
       ]);
     });
     And("the children should have been added to the database and been completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(2);
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
     });
     And("the process data should be saved in DB", () => {
       jobStorage.getDB()[parentCorrId].message.should.eql({
@@ -498,10 +498,10 @@ Feature("Child processes", () => {
       });
     });
     And("all 10 children should have been started", () => {
-      jobStorage.getDB()[parentCorrId].startedJobs.length.should.eql(10);
+      jobStorage.getDB()[parentCorrId].startedJobsCount.should.eql(10);
     });
     And("all 10 children should have been completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(10);
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(10);
     });
   });
 
@@ -592,10 +592,10 @@ Feature("Child processes", () => {
       });
     });
     And("all 100 children should have been started", () => {
-      jobStorage.getDB()[parentCorrId].startedJobs.length.should.eql(100);
+      jobStorage.getDB()[parentCorrId].startedJobsCount.should.eql(100);
     });
     But("none of the jobs will be listed as completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(0);
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(0);
     });
   });
 });

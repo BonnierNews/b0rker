@@ -1,6 +1,6 @@
 import * as uuid from "uuid";
 
-import { scanForInvalidKeys, bucketHash } from "../../lib/job-storage/utils/job-storage-helper.js";
+import { bucketHash, parentPayload, scanForInvalidKeys } from "../../lib/job-storage/utils/job-storage-helper.js";
 
 describe("scanning for invalid (according to firestore) keys", () => {
   it("should throw an error if a key is undefined", () => {
@@ -58,8 +58,8 @@ describe("bucket hashing", () => {
     // since the aim is to avoid contention, it should be fine as long as we get a reasonable distribution
     for (const { numBuckets, numIds, allowedVariance } of [
       { numBuckets: 10, numIds: 1000, allowedVariance: 0.5 }, // few items per bucket so 50% variance is ok
-      { numBuckets: 100, numIds: 100000, variance: 0.25 }, // more items per bucket so 25% variance is ok
-      { numBuckets: 1000, numIds: 1000000, variance: 0.25 }, // lots of items, lots of buckets so 25% variance is ok
+      { numBuckets: 100, numIds: 100000, allowedVariance: 0.25 }, // more items per bucket so 25% variance is ok
+      { numBuckets: 1000, numIds: 1000000, allowedVariance: 0.25 }, // lots of items, lots of buckets so 25% variance is ok
     ]) {
       describe(`${numIds} ids split into ${numBuckets} buckets`, () => {
         const ids = Array.from({ length: numIds }, () => uuid.v4());
@@ -82,5 +82,44 @@ describe("bucket hashing", () => {
         });
       });
     }
+  });
+});
+
+describe("parent payload", () => {
+  it("should return the correct payload for firestore", () => {
+    const message = { id: "some-id", attributes: { something: "1" } };
+    const nextKey = "next-key";
+    const children = [ "child-1", "child-2" ];
+    const payload = parentPayload(message, nextKey, children);
+    payload.should.eql({
+      startedJobsCount: 2,
+      message,
+      nextKey,
+    });
+  });
+  it("should return the correct payload for memory", () => {
+    const message = { id: "some-id", attributes: { something: "1" } };
+    const nextKey = "next-key";
+    const children = [ "child-1", "child-2" ];
+    const payload = parentPayload(message, nextKey, children, "memory");
+    payload.should.eql({
+      startedJobsCount: 2,
+      message,
+      nextKey,
+      concurrentRequests: 0,
+      completedJobsCount: 0,
+    });
+  });
+  it("should throw an error if the payload is too big (e.g. if the children are included in the message)", () => {
+    const children = Array.from({ length: 100000 }, () => uuid.v4());
+    const message = { id: "some-id", attributes: { something: "1", tooMuchData: children } };
+    const nextKey = "next-key";
+    let payload;
+    try {
+      payload = parentPayload(message, nextKey, children);
+    } catch (error) {
+      error.message.should.eql("This message is too big for firestore to handle");
+    }
+    should.not.exist(payload);
   });
 });
