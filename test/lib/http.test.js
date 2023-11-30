@@ -22,6 +22,13 @@ describe("http", () => {
       result.should.eql({ ok: true });
     });
   });
+  describe("x-throttle", () => {
+    it("should append x-throttle header", async () => {
+      fakeApi.get("/some/path").matchHeader("x-throttle", "yes").reply(200, { ok: true });
+      const result = await http.asserted.get({ path: "/some/path" });
+      result.should.eql({ ok: true });
+    });
+  });
   describe("google auth other base url with audience", () => {
     it("should append auth header", async () => {
       fakeApiOld.get("/not-some/path").matchHeader("Authorization", "Bearer some-gcp-token").reply(200, { ok: true });

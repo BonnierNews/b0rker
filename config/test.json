@@ -14,5 +14,6 @@
   },
   "livesInGcp": [
     "some"
-  ]
+  ],
+  "setXThrottle": true
 }
