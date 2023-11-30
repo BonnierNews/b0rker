@@ -506,6 +506,8 @@ Feature("Child processes", () => {
   });
 
   Scenario("Starting a lot of sub-sequences, guaranteed contention", () => {
+    // in the test suite we set allowed contention low to make sure we get contention
+    // this test doesn't check what causes the contention, just that it is handled
     let broker;
     const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
     const manyChildren = [];
@@ -592,7 +594,7 @@ Feature("Child processes", () => {
     And("all 100 children should have been started", () => {
       jobStorage.getDB()[parentCorrId].startedJobs.length.should.eql(100);
     });
-    But("none of the jobs should have be listed as completed", () => {
+    But("none of the jobs will be listed as completed", () => {
       jobStorage.getDB()[parentCorrId].completedJobs.length.should.eql(0);
     });
   });
