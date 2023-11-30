@@ -2,7 +2,7 @@ import * as uuid from "uuid";
 
 import { scanForInvalidKeys, bucketHash } from "../../lib/job-storage/utils/job-storage-helper.js";
 
-describe("scanning for invalid (firestore) keys", () => {
+describe("scanning for invalid (according to firestore) keys", () => {
   it("should throw an error if a key is undefined", () => {
     const message = { id: undefined };
     try {
@@ -54,10 +54,12 @@ describe("bucket hashing", () => {
     });
   });
   describe("the hash algorithim is uniform enough", () => {
-    for (const { numBuckets, numIds, variance } of [
-      { numBuckets: 10, numIds: 1000, variance: 0.5 },
-      { numBuckets: 100, numIds: 100000, variance: 0.25 },
-      { numBuckets: 1000, numIds: 1000000, variance: 0.25 },
+    // the fewer items per bucket, the more variance we expect
+    // since the aim is to avoid contention, it should be fine as long as we get a reasonable distribution
+    for (const { numBuckets, numIds, allowedVariance } of [
+      { numBuckets: 10, numIds: 1000, allowedVariance: 0.5 }, // few items per bucket so 50% variance is ok
+      { numBuckets: 100, numIds: 100000, variance: 0.25 }, // more items per bucket so 25% variance is ok
+      { numBuckets: 1000, numIds: 1000000, variance: 0.25 }, // lots of items, lots of buckets so 25% variance is ok
     ]) {
       describe(`${numIds} ids split into ${numBuckets} buckets`, () => {
         const ids = Array.from({ length: numIds }, () => uuid.v4());
@@ -69,8 +71,8 @@ describe("bucket hashing", () => {
         });
         const expectedBucketSize = numIds / numBuckets;
         // allow +/- variance on the bucket sizes
-        const maxBucketSize = Math.ceil(expectedBucketSize * (1 + variance));
-        const minBucketSize = Math.floor(expectedBucketSize * (1 - variance));
+        const maxBucketSize = Math.ceil(expectedBucketSize * (1 + allowedVariance));
+        const minBucketSize = Math.floor(expectedBucketSize * (1 - allowedVariance));
         it(`should only have bucket sizes between ${minBucketSize} and ${maxBucketSize}`, () => {
           const badBucket = Object.keys(bucketCounts).find((bucket) => {
             const bucketSize = bucketCounts[bucket];
