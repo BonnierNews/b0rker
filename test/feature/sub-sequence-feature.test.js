@@ -408,6 +408,102 @@ Feature("Child processes", () => {
     });
   });
 
+  Scenario("Starting sub-sequences with delay", () => {
+    const delay = 200;
+    let broker;
+    const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".trigger-sub-sequence.create-children-step", () => ({
+                id: "123",
+                type: "trigger",
+                key: "sub-sequence.test2",
+                data: [],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
+              })),
+              route(".perform.resumed-after-sub-sequense", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "test2",
+            executionDelay: delay,
+            sequence: [
+              route(".perform.something-in-child", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response, startTime, endTime;
+    When("a trigger message is received", async () => {
+      startTime = Date.now();
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { triggerMessage },
+        // parentCorrelationId being undefined below should not affect the outcome
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+      );
+      endTime = Date.now();
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+    And("all messages including children should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(10);
+    });
+    And("the last message should have correct format", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sequence.test.processed" });
+      last.message.data.should.eql([
+        { type: "something", id: 1 },
+        {
+          id: 2,
+          type: "sub-sequence.test2.processed",
+        },
+        { type: "I am done", id: "hello" },
+      ]);
+    });
+    And("the children should have been added to the database and been completed", () => {
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
+    });
+    And("the process data should be saved in DB", () => {
+      jobStorage.getDB()[parentCorrId].message.should.eql({
+        triggerMessage,
+        data: [
+          {
+            type: "something",
+            id: 1,
+          },
+        ],
+      });
+    });
+    And("the delay should have been respected", () => {
+      (endTime - startTime).should.be.greaterThanOrEqual(delay * 2);
+    });
+  });
+
   Scenario("Starting a bunch of sub-sequences, not enough to cause contention", () => {
     let broker;
     const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";

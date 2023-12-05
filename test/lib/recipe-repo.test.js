@@ -192,10 +192,10 @@ describe("recipes-repo", () => {
       },
     ]);
 
-    it("should get executionDelay on trigger-key", () => {
-      otherRepo.executionDelay("trigger.sub-sequence.one").should.eql(22);
-      otherRepo.executionDelay("trigger.sub-sequence.two").should.eql(0);
-      should.not.exist(otherRepo.executionDelay("trigger.sub-sequence.default"));
+    it("should get executionDelay on key", () => {
+      otherRepo.executionDelay("sub-sequence.one").should.eql(22);
+      otherRepo.executionDelay("sub-sequence.two").should.eql(0);
+      should.not.exist(otherRepo.executionDelay("sub-sequence.default"));
     });
   });
 
