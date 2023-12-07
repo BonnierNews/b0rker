@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@bonniernews/eslint-config": "^1.0.1",
-    "@bonniernews/lu-test": "github:BonnierNews/lu-test#bump/all-dependencies",
+    "@bonniernews/lu-test": "^7.0.0",
     "c8": "^8.0.1",
     "chai": "^4.3.10",
     "depcheck": "^1.4.7",
