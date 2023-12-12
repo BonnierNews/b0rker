@@ -2,7 +2,7 @@
   "name": "@bonniernews/b0rker",
   "version": "6.1.1",
   "engines": {
-    "node": ">=16 <=18"
+    "node": ">=16"
   },
   "type": "module",
   "description": "A message broker for Bonnier News",
@@ -38,7 +38,7 @@
     "@bonniernews/gcp-push-metrics": "^3.2.1"
   },
   "devDependencies": {
-    "@bonniernews/lu-test": "^4.0.0",
+    "@bonniernews/lu-test": "^6.1.0",
     "c8": "^7.12.0",
     "chai": "^4.3.7",
     "depcheck": "^1.4.2",
