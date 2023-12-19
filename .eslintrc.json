@@ -1,9 +1,9 @@
 {
-    "root": true,
-    "extends": [
-        "exp"
-    ],
-    "plugins": [
-        "json"
-    ]
+  "root": true,
+  "extends": [
+    "@bonniernews"
+  ],
+  "plugins": [
+    "json"
+  ]
 }
