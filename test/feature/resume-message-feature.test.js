@@ -175,8 +175,7 @@ Feature("Resume message", () => {
     });
   });
 
-  // Broken stub
-  Scenario.skip("Error when creating scheduled task", () => {
+  Scenario("Error when creating scheduled task", () => {
     let broker;
     let called = false;
     Given("broker is initiated with a recipe", () => {
@@ -218,11 +217,11 @@ Feature("Resume message", () => {
     });
 
     And("there should be one message handler response", () => {
-      fakePubSub.recordedMessageHandlerResponses().length.should.eql(2);
+      fakePubSub.recordedMessageHandlerResponses().length.should.eql(1);
     });
 
     And("that message should have been nacked for retry", () => {
-      const last = fakePubSub.recordedMessageHandlerResponses().shift();
+      const last = fakePubSub.recordedMessageHandlerResponses().pop();
       last.statusCode.should.eql(500, response.text);
     });
   });
