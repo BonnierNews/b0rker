@@ -6,7 +6,8 @@ import { Readable } from "stream";
 import http from "../../lib/http.js";
 
 const fakeApi = nock(config.gcpProxy.url);
-const fakeApiOld = nock(config.proxyUrl);
+const otherUrl = "https://example.com:80";
+const fakeApiOther = nock("https://example.com:80");
 
 describe("http", () => {
   beforeEach(() => {
@@ -15,9 +16,9 @@ describe("http", () => {
   afterEach(() => {
     fakeGcpAuth.reset();
   });
-  describe("google auth livesInGcp", () => {
+  describe("google auth", () => {
     it("should append auth header", async () => {
-      fakeApi.get("/some/path").matchHeader("Authorization", "Bearer some-gcp-token").reply(200, { ok: true });
+      fakeApi.get("/some/path").matchHeader("Authorization", "Bearer some-aud").reply(200, { ok: true });
       const result = await http.asserted.get({ path: "/some/path" });
       result.should.eql({ ok: true });
     });
@@ -31,15 +32,15 @@ describe("http", () => {
   });
   describe("google auth other base url with audience", () => {
     it("should append auth header", async () => {
-      fakeApiOld.get("/not-some/path").matchHeader("Authorization", "Bearer some-gcp-token").reply(200, { ok: true });
-      const result = await http.asserted.get({ baseUrl: config.proxyUrl, path: "/not-some/path", audience: "some-audience" });
+      fakeApiOther.get("/not-some/path").matchHeader("Authorization", "Bearer some-audience").reply(200, { ok: true });
+      const result = await http.asserted.get({ baseUrl: otherUrl, path: "/not-some/path", audience: "some-audience" });
       result.should.eql({ ok: true });
     });
   });
   describe("no google auth other base url without audience", () => {
     it("should append auth header", async () => {
-      fakeApiOld.get("/not-some/path").reply(200, { ok: true });
-      const result = await http.asserted.get({ baseUrl: config.proxyUrl, path: "/not-some/path" });
+      fakeApiOther.get("/not-some/path").reply(200, { ok: true });
+      const result = await http.asserted.get({ baseUrl: otherUrl, path: "/not-some/path" });
       result.should.eql({ ok: true });
     });
   });
@@ -102,7 +103,6 @@ describe("http", () => {
           return true;
         }).reply(200, { ok: true });
         const result = await http.asserted[method.toLowerCase()]({
-
           path: "/some/path",
           correlationId,
           body: { correlationId },
@@ -117,7 +117,6 @@ describe("http", () => {
             return true;
           }).reply(code, { ok: true });
           const result = await http.asserted[method.toLowerCase()]({
-
             path: "/some/path",
             correlationId,
             body: { correlationId },
@@ -209,7 +208,6 @@ describe("http", () => {
           return true;
         }).reply(200, { ok: true });
         const result = await http[method.toLowerCase()]({
-
           path: "/some/path",
           correlationId,
           body: { correlationId },

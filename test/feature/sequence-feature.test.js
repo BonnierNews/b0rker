@@ -166,12 +166,15 @@ Feature("Broker sequence", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      fakePubSub.recordedMessages().map((m) => m.attributes.key).should.eql([
-        "sequence.advertisement-order.perform.step-1",
-        "sequence.advertisement-order.perform.step-2",
-        "sequence.advertisement-order.perform.step-2.unrecoverable",
-        "sequence.advertisement-order.perform.step-2.unrecoverable.processed",
-      ]);
+      fakePubSub
+        .recordedMessages()
+        .map((m) => m.attributes.key)
+        .should.eql([
+          "sequence.advertisement-order.perform.step-1",
+          "sequence.advertisement-order.perform.step-2",
+          "sequence.advertisement-order.perform.step-2.unrecoverable",
+          "sequence.advertisement-order.perform.step-2.unrecoverable.processed",
+        ]);
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.message.should.eql({
         ...triggerMessage,
@@ -500,7 +503,10 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.bananas", correlationId: "some-correlation-id" });
+      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
+        key: "trigger.sequence.bananas",
+        correlationId: "some-correlation-id",
+      });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -512,7 +518,10 @@ Feature("Broker sequence", () => {
     });
 
     And("we should have 4 processed sequences", () => {
-      fakePubSub.recordedMessages().filter(({ attributes }) => attributes.key.endsWith(".processed")).length.should.eql(4);
+      fakePubSub
+        .recordedMessages()
+        .filter(({ attributes }) => attributes.key.endsWith(".processed"))
+        .length.should.eql(4);
     });
 
     And("last message should contain original message and appended data from the first lambda", () => {

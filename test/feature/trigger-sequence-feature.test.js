@@ -84,7 +84,9 @@ Feature("Trigger sequence by http call", () => {
 
     let response;
     When("a trigger http call is received", async () => {
-      response = await request(broker).post(`/${config.appName}/trigger/sequence/advertisement-order`).send(triggerMessage);
+      response = await request(broker)
+        .post(`/${config.appName}/trigger/sequence/advertisement-order`)
+        .send(triggerMessage);
     });
 
     Then("the status code should be 200 OK", () => {
@@ -129,10 +131,13 @@ Feature("Trigger sequence by http call", () => {
 
     let response;
     When("a trigger http call is received", async () => {
-      response = await request(broker).post("/trigger/sequence/advertisement-order").set({ "x-correlation-id": "apa" }).send({
-        type: "advertisement-order",
-        id: "some-order-id",
-      });
+      response = await request(broker)
+        .post("/trigger/sequence/advertisement-order")
+        .set({ "x-correlation-id": "apa" })
+        .send({
+          type: "advertisement-order",
+          id: "some-order-id",
+        });
     });
 
     Then("the status code should be 200 OK", () => {
