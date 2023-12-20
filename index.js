@@ -18,7 +18,6 @@ export function route(key, fn) {
 }
 
 export function start({ recipes, triggers, startServer = true }) {
-
   assert(config.appName, "appName must be set in config");
 
   const router = expressPromiseRouter();

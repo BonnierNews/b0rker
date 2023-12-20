@@ -211,7 +211,11 @@ Feature("Make http call from lambda", () => {
 
     let response;
     When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(broker, { ...triggerMessage, attributes: { keepAttr: 1, someAttr: 2 } }, { key: "trigger.order" });
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { ...triggerMessage, attributes: { keepAttr: 1, someAttr: 2 } },
+        { key: "trigger.order" }
+      );
     });
 
     Then("the status code should be 200 Ok", () => {
@@ -223,7 +227,8 @@ Feature("Make http call from lambda", () => {
     });
 
     And("we should have recorded 2 processed messages", () => {
-      fakePubSub.recordedMessages()
+      fakePubSub
+        .recordedMessages()
         .filter(({ attributes }) => attributes.key === "sequence.a-notification.processed")
         .length.should.eql(2);
     });

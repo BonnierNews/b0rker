@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "mocha --exit --reporter ${REPORTER:-spec} && eslint . --ext .js,.json --cache && depcheck --ignores=\"prettier,test-data\"",
-    "format": "prettier **/*.js --write && eslint . --fix",
+    "format": "prettier {,**/,**/**,**/**/**}*.{js,json,md} --write && eslint . --fix",
     "coverage": "c8 npm test",
     "check-coverage": "c8 check-coverage"
   },

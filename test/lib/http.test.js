@@ -103,7 +103,6 @@ describe("http", () => {
           return true;
         }).reply(200, { ok: true });
         const result = await http.asserted[method.toLowerCase()]({
-
           path: "/some/path",
           correlationId,
           body: { correlationId },
@@ -118,7 +117,6 @@ describe("http", () => {
             return true;
           }).reply(code, { ok: true });
           const result = await http.asserted[method.toLowerCase()]({
-
             path: "/some/path",
             correlationId,
             body: { correlationId },
@@ -210,7 +208,6 @@ describe("http", () => {
           return true;
         }).reply(200, { ok: true });
         const result = await http[method.toLowerCase()]({
-
           path: "/some/path",
           correlationId,
           body: { correlationId },

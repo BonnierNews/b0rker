@@ -80,7 +80,14 @@ Feature("Trigger handler", () => {
 
     let response;
     When("a trigger http call is received", async () => {
-      response = await request(broker).post("/trigger/bulk/order").send({ messages: [ { id: 1, type: "name" }, { id: 2, type: "name" } ] });
+      response = await request(broker)
+        .post("/trigger/bulk/order")
+        .send({
+          messages: [
+            { id: 1, type: "name" },
+            { id: 2, type: "name" },
+          ],
+        });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -139,7 +146,9 @@ Feature("Trigger handler", () => {
 
     let response;
     When("a trigger http call is received", async () => {
-      response = await request(broker).post("/trigger/bulk/order").send({ messages: { id: 1, type: "name" } });
+      response = await request(broker)
+        .post("/trigger/bulk/order")
+        .send({ messages: { id: 1, type: "name" } });
     });
 
     Then("the status code should be 400 Bad Request", () => {

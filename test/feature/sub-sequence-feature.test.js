@@ -245,7 +245,7 @@ Feature("Child processes", () => {
                 type: "trigger",
                 key: "sub-sequence.test2",
                 data: [],
-                messages: [ ],
+                messages: [],
               })),
               route(".perform.resumed-after-sub-sequense", () => ({
                 type: "I am done",
@@ -576,9 +576,7 @@ Feature("Child processes", () => {
     And("the last message should be the last child processed", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
-      last.message.data.should.eql([
-        { type: "I was here child-99", id: "child-99" },
-      ]);
+      last.message.data.should.eql([ { type: "I was here child-99", id: "child-99" } ]);
     });
     And("the process data should be saved in DB", () => {
       jobStorage.getDB()[parentCorrId].message.should.eql({
