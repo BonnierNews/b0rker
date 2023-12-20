@@ -7,13 +7,9 @@
   "selfUrl": "http://self.local",
   "taskQueue": "REPLACED_BY_ENV",
   "maxResumeCount": 10,
-  "proxyUrl": "http://example.com",
   "gcpProxy": {
     "url": "https://some-base.local",
     "audience": "some-aud"
   },
-  "livesInGcp": [
-    "some"
-  ],
   "setXThrottle": true
 }
