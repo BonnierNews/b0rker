@@ -14,6 +14,7 @@ Feature("Child processes", () => {
     fakeGcpAuth.authenticated();
     nock.disableNetConnect();
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
+    fakePubSub.reset();
   });
   afterEachScenario(() => {
     fakePubSub.reset();

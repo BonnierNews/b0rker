@@ -106,8 +106,10 @@ Feature("Trigger handler", () => {
           attributes: {
             key: "trigger.order",
             correlationId: fakePubSub.recordedMessages()[0].attributes.correlationId,
+            idempotencyKey: fakePubSub.recordedMessages()[0].attributes.idempotencyKey,
             topic: "b0rker",
           },
+          deliveryAttempt: 1,
         },
         {
           topic: "b0rker",
@@ -115,8 +117,10 @@ Feature("Trigger handler", () => {
           attributes: {
             key: "trigger.order",
             correlationId: fakePubSub.recordedMessages()[1].attributes.correlationId,
+            idempotencyKey: fakePubSub.recordedMessages()[1].attributes.idempotencyKey,
             topic: "b0rker",
           },
+          deliveryAttempt: 1,
         },
       ]);
     });

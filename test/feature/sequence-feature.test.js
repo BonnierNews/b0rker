@@ -56,6 +56,7 @@ Feature("Broker sequence", () => {
       last.attributes.should.eql({
         correlationId: "some-correlation-id",
         key: "sequence.advertisement-order.processed",
+        idempotencyKey: last.attributes.idempotencyKey,
         topic: "b0rker",
       });
       last.message.should.eql({
@@ -529,6 +530,7 @@ Feature("Broker sequence", () => {
       last.attributes.should.eql({
         correlationId: "some-correlation-id",
         key: "sequence.bananas.processed",
+        idempotencyKey: last.attributes.idempotencyKey,
         topic: "b0rker",
       });
       last.message.should.eql({

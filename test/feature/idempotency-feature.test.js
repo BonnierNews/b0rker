@@ -9,6 +9,10 @@ const triggerMessage = {
 };
 
 Feature("Message idempotency", () => {
+  beforeEachScenario(() => {
+    fakePubSub.reset();
+    jobStorage.clearDB();
+  });
   afterEachScenario(() => {
     fakePubSub.reset();
     jobStorage.clearDB();
@@ -40,9 +44,8 @@ Feature("Message idempotency", () => {
     When("a trigger message is received", async () => {
       response = await fakePubSub.triggerMessage(broker, triggerMessage, {
         key: "trigger.sequence.advertisement-order",
-        deliveryAttempt: 1,
         idempotencyKey: "some-epic-key",
-      });
+      }, { deliveryAttempt: 1 });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -52,9 +55,8 @@ Feature("Message idempotency", () => {
     And("the trigger message is redelivered with the same idempotency key", async () => {
       response = await fakePubSub.triggerMessage(broker, triggerMessage, {
         key: "trigger.sequence.advertisement-order",
-        deliveryAttempt: 1,
         idempotencyKey: "some-epic-key",
-      });
+      }, { deliveryAttempt: 1 });
     });
 
     Then("the status code should be 200 OK", () => {
@@ -92,23 +94,20 @@ Feature("Message idempotency", () => {
       fakePubSub.enablePublish(broker);
     });
 
-    let response;
     When("a trigger message is received and retried", async () => {
       await fakePubSub.triggerMessage(broker, triggerMessage, {
         key: "trigger.sequence.advertisement-order",
-        deliveryAttempt: 1,
         idempotencyKey: "some-epic-key",
-      });
+      }, { deliveryAttempt: 1 });
 
       await fakePubSub.triggerMessage(broker, triggerMessage, {
         key: "trigger.sequence.advertisement-order",
-        deliveryAttempt: 2,
         idempotencyKey: "some-epic-key",
-      });
+      }, { deliveryAttempt: 2 });
     });
 
-    And("there should be two message handler responses", () => {
-      fakePubSub.recordedMessageHandlerResponses().length.should.eql(2);
+    And("there should be two message handler responses per run", () => {
+      fakePubSub.recordedMessageHandlerResponses().length.should.eql(4);
     });
 
     And("we should have processed both messages", () => {
