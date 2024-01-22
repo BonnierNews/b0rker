@@ -14,5 +14,6 @@
   "setXThrottle": true,
   "toggle": {
     "checkIdempotency": true
-  }
+  },
+  "firestore": { "host": "localhost:8083", "projectId": "dummy-project", "ssl": false }
 }
