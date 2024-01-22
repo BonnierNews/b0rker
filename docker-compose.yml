@@ -1,0 +1,7 @@
+version: "3"
+services:
+  firestore:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:456.0.0-emulators
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8083 --project=dummy-project
+    ports:
+      - "8083:8083"
