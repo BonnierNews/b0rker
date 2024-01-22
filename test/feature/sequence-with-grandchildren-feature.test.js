@@ -2,7 +2,7 @@ import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
 import nock from "nock";
 
 import { start, route } from "../../index.js";
-import jobStorage from "../../lib/job-storage/index.js";
+import * as jobStorage from "../../lib/job-storage/firestore-job-storage.js";
 
 const triggerMessage = {
   type: "advertisement-order",
