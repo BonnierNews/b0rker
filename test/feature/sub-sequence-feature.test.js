@@ -3,6 +3,7 @@ import nock from "nock";
 
 import { start, route } from "../../index.js";
 import * as jobStorage from "../../lib/job-storage/firestore-job-storage.js";
+import { clearDb, preventFirestoreDeletions, restoreFirestoreDeletions } from "../helpers/firestore-emulator.js";
 
 const triggerMessage = {
   type: "advertisement-order",
@@ -10,19 +11,23 @@ const triggerMessage = {
 };
 
 Feature("Child processes", () => {
-  beforeEachScenario(() => {
+  beforeEachScenario(async () => {
     fakeGcpAuth.authenticated();
+    fakePubSub.reset();
     nock.disableNetConnect();
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
     fakePubSub.reset();
+    await clearDb();
+    preventFirestoreDeletions();
   });
-  afterEachScenario(() => {
+  afterEachScenario(async () => {
     fakePubSub.reset();
     fakeGcpAuth.reset();
-    jobStorage.clearDB();
+    await clearDb();
+    restoreFirestoreDeletions();
   });
 
-  Scenario("Starting sub-sequences", () => {
+  Scenario("Starting sub-sequences", async () => {
     let broker;
     const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
     Given("broker is initiated with a recipe", () => {
@@ -96,11 +101,14 @@ Feature("Child processes", () => {
         { type: "I am done", id: "hello" },
       ]);
     });
+
+    const job = await jobStorage.getFromDb(parentCorrId);
     And("the children should have been added to the database and been completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
+      console.log(job);
+      job.completedJobsCount.should.eql(2);
     });
     And("the process data should be saved in DB", () => {
-      jobStorage.getDB()[parentCorrId].message.should.eql({
+      job.message.should.eql({
         triggerMessage,
         data: [
           {
@@ -297,8 +305,9 @@ Feature("Child processes", () => {
         { type: "I am done", id: "hello" },
       ]);
     });
-    And("nothing should have been added to the database", () => {
-      should.not.exist(jobStorage.getDB()[parentCorrId]);
+    And("nothing should have been added to the database", async () => {
+      const job = await jobStorage.getFromDb(parentCorrId);
+      should.not.exist(job);
     });
   });
 
@@ -404,12 +413,13 @@ Feature("Child processes", () => {
       const last = [ ...fakePubSub.recordedMessages() ].pop();
       last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
     });
-    And("the children should not have been added to the database", () => {
-      jobStorage.getDB().should.eql({});
+    And("the children should not have been added to the database", async () => {
+      const jobs = await jobStorage.getAllFromDb();
+      jobs.should.eql({});
     });
   });
 
-  Scenario("Starting a bunch of sub-sequences, not enough to cause contention", () => {
+  Scenario("Starting a bunch of sub-sequences, not enough to cause contention", async () => {
     let broker;
     const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
     const manyChildren = [];
@@ -487,8 +497,11 @@ Feature("Child processes", () => {
         { type: "I am done", id: "hello" },
       ]);
     });
+
+    const job = await jobStorage.getFromDb(parentCorrId);
+    console.log(await jobStorage.getAllFromDb());
     And("the process data should be saved in DB", () => {
-      jobStorage.getDB()[parentCorrId].message.should.eql({
+      job.message.should.eql({
         triggerMessage,
         data: [
           {
@@ -499,14 +512,14 @@ Feature("Child processes", () => {
       });
     });
     And("all 10 children should have been started", () => {
-      jobStorage.getDB()[parentCorrId].startedJobsCount.should.eql(10);
+      job.startedJobsCount.should.eql(10);
     });
     And("all 10 children should have been completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(10);
+      job.completedJobsCount.should.eql(10);
     });
   });
 
-  Scenario("Starting a lot of sub-sequences, guaranteed contention", () => {
+  Scenario("Starting a lot of sub-sequences, guaranteed contention", async () => {
     // in the test suite we set allowed contention low to make sure we get contention
     // this test doesn't check what causes the contention, just that it is handled
     let broker;
@@ -570,6 +583,7 @@ Feature("Child processes", () => {
     Then("the status code should be 200 OK", () => {
       response.statusCode.should.eql(200, response.text);
     });
+    console.log(await jobStorage.getAllFromDb());
 
     And("all messages including children should have been published", () => {
       fakePubSub.recordedMessages().length.should.eql(302);
@@ -579,8 +593,10 @@ Feature("Child processes", () => {
       last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
       last.message.data.should.eql([ { type: "I was here child-99", id: "child-99" } ]);
     });
+
+    const job = await jobStorage.getFromDb(parentCorrId);
     And("the process data should be saved in DB", () => {
-      jobStorage.getDB()[parentCorrId].message.should.eql({
+      job.message.should.eql({
         triggerMessage,
         data: [
           {
@@ -591,10 +607,10 @@ Feature("Child processes", () => {
       });
     });
     And("all 100 children should have been started", () => {
-      jobStorage.getDB()[parentCorrId].startedJobsCount.should.eql(100);
+      job.startedJobsCount.should.eql(100);
     });
     But("none of the jobs will be listed as completed", () => {
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(0);
+      job.completedJobsCount.should.eql(0);
     });
   });
 });

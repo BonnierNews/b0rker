@@ -3,6 +3,7 @@ import nock from "nock";
 
 import { start, route } from "../../index.js";
 import * as jobStorage from "../../lib/job-storage/firestore-job-storage.js";
+import { clearDb, preventFirestoreDeletions, restoreFirestoreDeletions } from "../helpers/firestore-emulator.js";
 
 const triggerMessage = {
   type: "advertisement-order",
@@ -23,18 +24,21 @@ const grandchildMessages = (childNumber) => {
 };
 
 Feature("Grandchild processes", () => {
-  beforeEachScenario(() => {
+  beforeEachScenario(async () => {
     fakeGcpAuth.authenticated();
     nock.disableNetConnect();
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
+    await clearDb();
+    preventFirestoreDeletions();
   });
-  afterEachScenario(() => {
+  afterEachScenario(async () => {
     fakePubSub.reset();
     fakeGcpAuth.reset();
-    jobStorage.clearDB();
+    await clearDb();
+    restoreFirestoreDeletions();
   });
 
-  Scenario("Sequence starts a sequence that starts a sub-sequence", () => {
+  Scenario("Sequence starts a sequence that starts a sub-sequence", async () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start({
@@ -130,14 +134,13 @@ Feature("Grandchild processes", () => {
         .should.eql(grandchildMessages(1));
     });
 
+    const job1 = await jobStorage.getFromDb("sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0");
     And("the children of the first sequence should have been added to the database and been completed", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0";
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
+      job1.completedJobsCount.should.eql(2);
     });
 
     And("the first sequence process data should be saved in DB", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0";
-      jobStorage.getDB()[parentCorrId].message.should.eql({
+      job1.message.should.eql({
         id: "child-1",
         data: [],
       });
@@ -157,14 +160,13 @@ Feature("Grandchild processes", () => {
         .should.eql(grandchildMessages(2));
     });
 
+    const job2 = await jobStorage.getFromDb("sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1");
     And("the children of the second sequence should have been added to the database and been completed", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1";
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
+      job2.completedJobsCount.should.eql(2);
     });
 
     And("the second sequence process data should be saved in DB", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1";
-      jobStorage.getDB()[parentCorrId].message.should.eql({
+      job2.message.should.eql({
         id: "child-2",
         data: [],
       });

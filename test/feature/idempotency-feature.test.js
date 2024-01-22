@@ -1,7 +1,7 @@
 import { fakePubSub } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
-import jobStorage from "../../lib/job-storage/index.js";
+import { clearDb } from "../helpers/firestore-emulator.js";
 
 const triggerMessage = {
   type: "advertisement-order",
@@ -11,11 +11,11 @@ const triggerMessage = {
 Feature("Message idempotency", () => {
   beforeEachScenario(() => {
     fakePubSub.reset();
-    jobStorage.clearDB();
+    clearDb();
   });
   afterEachScenario(() => {
     fakePubSub.reset();
-    jobStorage.clearDB();
+    clearDb();
   });
 
   Scenario("Same message gets redelivered", () => {
