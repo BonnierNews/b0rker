@@ -11,5 +11,8 @@
     "url": "https://some-base.local",
     "audience": "some-aud"
   },
-  "setXThrottle": true
+  "setXThrottle": true,
+  "toggle": {
+    "checkIdempotency": true
+  }
 }
