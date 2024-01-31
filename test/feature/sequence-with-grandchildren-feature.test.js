@@ -13,10 +13,10 @@ const grandchildMessages = (childNumber) => {
   return [
     { id: `child-${childNumber}`, key: "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step" },
     { id: "grandchild-1", key: "trigger.sub-sequence.test-subseq" },
-    { id: "grandchild-1", key: "sub-sequence.test-subseq.perform.something-in-child" },
-    { id: "grandchild-1", key: "sub-sequence.test-subseq.processed" },
     { id: "grandchild-2", key: "trigger.sub-sequence.test-subseq" },
+    { id: "grandchild-1", key: "sub-sequence.test-subseq.perform.something-in-child" },
     { id: "grandchild-2", key: "sub-sequence.test-subseq.perform.something-in-child" },
+    { id: "grandchild-1", key: "sub-sequence.test-subseq.processed" },
     { id: "grandchild-2", key: "sub-sequence.test-subseq.processed" },
     { id: `child-${childNumber}`, key: "sequence.test-seq2.processed" },
   ];
