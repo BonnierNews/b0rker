@@ -597,4 +597,142 @@ Feature("Child processes", () => {
       jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(0);
     });
   });
+
+  Scenario("Same parent triggers twice at the same time (because pub/sub)", () => {
+    let broker;
+    const parentCorrId = "sequence.test.trigger-sub-sequence.create-children-step:abc123";
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".trigger-sub-sequence.create-children-step", () => ({
+                id: "123",
+                type: "trigger",
+                key: "sub-sequence.test2",
+                data: [],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
+              })),
+              route(".perform.resumed-after-sub-sequense", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "test2",
+            sequence: [
+              route(".perform.something-in-child", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received, twice", async () => {
+      response = await Promise.all([
+        fakePubSub.triggerMessage(
+          broker,
+          { triggerMessage },
+          // parentCorrelationId being undefined below should not affect the outcome
+          { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+        ),
+        fakePubSub.triggerMessage(
+          broker,
+          { triggerMessage },
+          // parentCorrelationId being undefined below should not affect the outcome
+          { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+        ),
+      ]);
+    });
+
+    Then("the first status code should be 200 OK", () => {
+      response[0].statusCode.should.eql(200, response[0].text);
+    });
+
+    And("the second status code should be 200 OK", () => {
+      response[1].statusCode.should.eql(200, response[1].text);
+    });
+
+    And("all messages including children should have been published once, and the create-children-step twice", () => {
+      fakePubSub.recordedMessages().length.should.eql(12);
+    });
+
+    And("the sequence should have been triggered twice", () => {
+      fakePubSub
+        .recordedMessages()
+        .filter((message) => message.attributes.key === "sequence.test.perform.do-something")
+        .length.should.eql(2);
+    });
+
+    And("the sub-sequence should have been triggered twice", () => {
+      fakePubSub
+        .recordedMessages()
+        .filter((message) => message.attributes.key === "sequence.test.trigger-sub-sequence.create-children-step")
+        .length.should.eql(2);
+    });
+
+    And("all other steps should have only been triggered once", () => {
+      const steps = [ ...new Set(fakePubSub
+        .recordedMessages()
+        .filter(
+          (message) =>
+            message.attributes.key !== "sequence.test.perform.do-something" &&
+            message.attributes.key !== "sequence.test.trigger-sub-sequence.create-children-step"
+        )
+        .map((message) => {
+          return { id: message.message.id, key: message.attributes.key };
+        })) ];
+      steps.forEach((step) => {
+        const numCalls = fakePubSub
+          .recordedMessages()
+          .filter((message) => message.attributes.key === step.key && message.message.id === step.id).length;
+          // we just care about numCalls, but compare an object so we can see which step is failing, if any
+        const expected = { id: step.id, key: step.key, numCalls };
+        expected.should.eql({ id: step.id, key: step.key, numCalls: 1 });
+      });
+    });
+
+    And("the last message should have correct format", () => {
+      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      last.attributes.should.contain({ key: "sequence.test.processed" });
+      last.message.data.should.eql([
+        { type: "something", id: 1 },
+        {
+          id: 2,
+          type: "sub-sequence.test2.processed",
+        },
+        { type: "I am done", id: "hello" },
+      ]);
+    });
+    And("the 2 children should have been added to the database and been completed once", () => {
+      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
+    });
+    And("the process data should be saved in DB", () => {
+      jobStorage.getDB()[parentCorrId].message.should.eql({
+        triggerMessage,
+        data: [
+          {
+            type: "something",
+            id: 1,
+          },
+        ],
+      });
+    });
+  });
 });
