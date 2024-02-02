@@ -49,12 +49,14 @@ export function start({ recipes, triggers, startServer = true }) {
 
   app.use(router);
 
+  /* c8 ignore start */
   if (startServer) {
     const port = process.env.PORT || 8080;
     app.listen(port, () => {
       buildLogger().info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
     });
   }
+  /* c8 ignore stop */
 
   return app;
 }
