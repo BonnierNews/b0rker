@@ -9,16 +9,59 @@ const triggerMessage = {
   id: "some-order-id",
 };
 
-const grandchildMessages = (childNumber) => {
+const grandchildMessages = (childNumber, granchildCorrelationIds) => {
+  const parentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:${childNumber - 1}`;
+  const childCorrelationId = `abc123:${childNumber - 1}`;
+  const childId = `child-${childNumber}`;
   return [
-    { id: `child-${childNumber}`, key: "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step" },
-    { id: "grandchild-1", key: "trigger.sub-sequence.test-subseq" },
-    { id: "grandchild-1", key: "sub-sequence.test-subseq.perform.something-in-child" },
-    { id: "grandchild-1", key: "sub-sequence.test-subseq.processed" },
-    { id: "grandchild-2", key: "trigger.sub-sequence.test-subseq" },
-    { id: "grandchild-2", key: "sub-sequence.test-subseq.perform.something-in-child" },
-    { id: "grandchild-2", key: "sub-sequence.test-subseq.processed" },
-    { id: `child-${childNumber}`, key: "sequence.test-seq2.processed" },
+    {
+      id: childId,
+      key: "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step",
+      correlationId: childCorrelationId,
+      parentCorrelationId: undefined,
+    },
+    {
+      id: "grandchild-1",
+      key: "trigger.sub-sequence.test-subseq",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[0],
+    },
+    {
+      id: "grandchild-1",
+      key: "sub-sequence.test-subseq.perform.something-in-child",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[0],
+    },
+    {
+      id: "grandchild-1",
+      key: "sub-sequence.test-subseq.processed",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[0],
+    },
+    {
+      id: "grandchild-2",
+      key: "trigger.sub-sequence.test-subseq",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[1],
+    },
+    {
+      id: "grandchild-2",
+      key: "sub-sequence.test-subseq.perform.something-in-child",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[1],
+    },
+    {
+      id: "grandchild-2",
+      key: "sub-sequence.test-subseq.processed",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[1],
+    },
+    {
+      id: childId,
+      key: "sequence.test-seq2.processed",
+      correlationId: childCorrelationId,
+      parentCorrelationId: undefined,
+    },
   ];
 };
 
@@ -116,58 +159,51 @@ Feature("Grandchild processes", () => {
         ]);
     });
 
-    And("the first child sequence should have been fulfilled", () => {
-      const firstChildSequence = fakePubSub
-        .recordedMessages()
-        .filter(
-          (m) =>
-            m.attributes.correlationId === "abc123:0" ||
-            m.attributes.parentCorrelationId ===
-              "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0"
-        );
-      firstChildSequence
-        .map(({ message: { id }, attributes: { key } }) => ({ id, key }))
-        .should.eql(grandchildMessages(1));
-    });
+    for (let index = 0; index < 2; index++) {
+      const childName = index === 0 ? "first" : "second";
+      const childCorrelationId = `abc123:${index}`;
+      const childsParentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:${index}`;
 
-    And("the children of the first sequence should have been added to the database and been completed", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0";
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
-    });
+      And(`the ${childName} child sequence should have been fulfilled`, () => {
+        const childSequence = fakePubSub
+          .recordedMessages()
+          .filter(
+            (m) =>
+              m.attributes.correlationId === childCorrelationId ||
+              m.attributes.parentCorrelationId === childsParentCorrelationId
+          );
+        const grandchildCorrelationIds = [
+          ...new Set(
+            childSequence
+              .filter(
+                (m) =>
+                  m.attributes.parentCorrelationId === childsParentCorrelationId
+              )
+              .map(({ attributes: { correlationId } }) => correlationId)
+          ),
+        ];
 
-    And("the first sequence process data should be saved in DB", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:0";
-      jobStorage.getDB()[parentCorrId].message.should.eql({
-        id: "child-1",
-        data: [],
+        childSequence
+          .map(({ message: { id }, attributes: { key, correlationId, parentCorrelationId } }) => ({
+            id,
+            key,
+            correlationId,
+            parentCorrelationId,
+          }))
+          .should.eql(grandchildMessages(index + 1, grandchildCorrelationIds));
       });
-    });
 
-    And("the second child sequence should have been fulfilled", () => {
-      const secondChildSequence = fakePubSub
-        .recordedMessages()
-        .filter(
-          (m) =>
-            m.attributes.correlationId === "abc123:1" ||
-            m.attributes.parentCorrelationId ===
-              "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1"
-        );
-      secondChildSequence
-        .map(({ message: { id }, attributes: { key } }) => ({ id, key }))
-        .should.eql(grandchildMessages(2));
-    });
-
-    And("the children of the second sequence should have been added to the database and been completed", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1";
-      jobStorage.getDB()[parentCorrId].completedJobsCount.should.eql(2);
-    });
-
-    And("the second sequence process data should be saved in DB", () => {
-      const parentCorrId = "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:1";
-      jobStorage.getDB()[parentCorrId].message.should.eql({
-        id: "child-2",
-        data: [],
+      And(`the children of the ${childName} sequence should have been added to the database and been completed`, () => {
+        jobStorage.getDB()[childsParentCorrelationId].completedJobsCount.should.eql(2);
       });
-    });
+
+      And(`the ${childName} sequence process data should be saved in DB`, () => {
+        jobStorage.getDB()[childsParentCorrelationId].message.should.eql({
+          id: `child-${index + 1}`,
+          data: [],
+        });
+      });
+
+    }
   });
 });
