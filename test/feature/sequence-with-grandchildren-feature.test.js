@@ -10,8 +10,8 @@ const triggerMessage = {
 };
 
 const grandchildMessages = (childNumber, granchildCorrelationIds) => {
-  const parentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:${childNumber - 1}`;
   const childCorrelationId = `abc123:${childNumber - 1}`;
+  const parentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:${childCorrelationId}`;
   const childId = `child-${childNumber}`;
   return [
     {
