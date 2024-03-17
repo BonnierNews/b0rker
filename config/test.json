@@ -4,7 +4,7 @@
   "deadLetterTopic": "dead-letter-topic",
   "jobStorage": "memory",
   "jobStorageBuckets": 10,
-  "selfUrl": "http://self.local",
+  "selfUrl": "http://host.docker.internal",
   "taskQueue": "REPLACED_BY_ENV",
   "gcpProxy": {
     "url": "https://some-base.local",
