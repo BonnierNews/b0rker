@@ -3,6 +3,7 @@ import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
 import assert from "assert";
 
+import "express-async-errors";
 import { init } from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
