@@ -7,6 +7,7 @@ import { init } from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
 import { trigger } from "./lib/trigger-handler.js";
+import cloudTasksRouter from "./lib/cloud-tasks/router.js";
 
 export { default as buildContext } from "./lib/context.js";
 
@@ -44,6 +45,7 @@ export function start({ recipes, triggers, startServer = true }) {
   router.post("/trigger/:name", trigger.bind(trigger, recipeMap));
 
   app.use(router);
+  app.use(cloudTasksRouter(recipes));
 
   /* c8 ignore start */
   if (startServer) {
