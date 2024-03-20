@@ -6,7 +6,6 @@
   "jobStorageBuckets": 10,
   "selfUrl": "http://self.local",
   "taskQueue": "REPLACED_BY_ENV",
-  "maxResumeCount": 10,
   "gcpProxy": {
     "url": "https://some-base.local",
     "audience": "some-aud"
