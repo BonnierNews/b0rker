@@ -27,7 +27,6 @@
     "@bonniernews/gcp-push-metrics": "^3.2.1",
     "@google-cloud/firestore": "^6.4.1",
     "@google-cloud/pubsub": "^4.0.7",
-    "@google-cloud/tasks": "^4.0.1",
     "axios": "^1.6.2",
     "exp-config": "^4.2.1",
     "express": "^4.18.2",
