@@ -6,7 +6,6 @@ import assert from "assert";
 import { init } from "./lib/recipe-repo.js";
 import buildLogger from "./lib/logger.js";
 import messageHandler from "./lib/message-handler.js";
-import resumeHandler from "./lib/resume-handler.js";
 import { trigger, triggerBulk } from "./lib/trigger-handler.js";
 
 export { default as buildContext } from "./lib/context.js";
@@ -40,7 +39,6 @@ export function start({ recipes, triggers, startServer = true }) {
     res.send("Im alive - som fan!");
   });
 
-  router.post("/resume-message", resumeHandler);
   router.post("/message", messageHandler.bind(messageHandler, recipeMap));
   router.post("/trigger/bulk/:namespace/:sequence", triggerBulk.bind(triggerBulk, recipeMap));
   router.post("/trigger/bulk/:name", triggerBulk.bind(triggerBulk, recipeMap));
