@@ -45,7 +45,7 @@ export function start({ recipes, triggers, startServer = true }) {
   router.post("/trigger/:name", trigger.bind(trigger, recipeMap));
 
   app.use(router);
-  app.use(cloudTasksRouter(recipes));
+  app.use("/v2", cloudTasksRouter(recipes, triggers));
 
   /* c8 ignore start */
   if (startServer) {
