@@ -30,10 +30,6 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       });
     });
 
-    And("we can publish cloud tasks", () => {
-      fakeCloudTasks.enablePublish(broker);
-    });
-
     And("we can publish pubsub messages", () => {
       fakePubSub.enablePublish(broker);
     });
@@ -41,6 +37,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     let response;
     When("a trigger message is received", async () => {
       response = await fakeCloudTasks.runSequence(
+        broker,
         "/v2/sequence/test",
         {},
         { "X-CloudTasks-TaskRetryCount": maxRetries }
@@ -48,12 +45,11 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     });
 
     Then("the status code should be 201 created", () => {
-      response.statusCode.should.eql(201, response.text);
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("there sequence should have been processed", () => {
-      fakeCloudTasks
-        .recordedMessages()
+      response.messages
         .map(({ url }) => url)
         .should.eql([ "/v2/sequence/test/perform.http-step", "/v2/sequence/test/processed" ]);
     });
