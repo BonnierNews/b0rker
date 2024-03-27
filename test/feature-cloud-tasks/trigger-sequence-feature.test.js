@@ -44,7 +44,6 @@ Feature("Trigger sequence by http call", () => {
 
     And("last message should contain original message and appended data from lambdas", () => {
       const last = [ ...response.messages ].pop();
-      console.log(last);
       last.message.should.eql({
         ...triggerMessage,
         data: [ { type: "step-1", id: "step-1-was-here" } ],
