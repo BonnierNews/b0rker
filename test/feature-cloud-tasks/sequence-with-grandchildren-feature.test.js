@@ -162,6 +162,7 @@ Feature("Grandchild processes", () => {
       const childCorrelationId = `abc123:${index}`;
       const childsParentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:${index}`;
 
+      // eslint-disable-next-line no-loop-func
       And(`the ${childName} child sequence should have been fulfilled`, () => {
         const childSequence = response.messages.filter(
           (m) => m.correlationId === childCorrelationId || m.headers.parentCorrelationId === childsParentCorrelationId
