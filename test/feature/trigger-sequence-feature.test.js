@@ -44,6 +44,7 @@ Feature("Trigger sequence by http call", () => {
 
     Then("the status code should be 200 OK", () => {
       response.statusCode.should.eql(200, response.text);
+      response.body.should.have.property("correlationId");
     });
 
     And("two messages should have been published", () => {
@@ -91,6 +92,7 @@ Feature("Trigger sequence by http call", () => {
 
     Then("the status code should be 200 OK", () => {
       response.statusCode.should.eql(200, response.text);
+      response.body.should.have.property("correlationId");
     });
 
     And("two messages should have been published", () => {
@@ -142,6 +144,7 @@ Feature("Trigger sequence by http call", () => {
 
     Then("the status code should be 200 OK", () => {
       response.statusCode.should.eql(200, response.text);
+      response.body.should.have.property("correlationId");
     });
 
     And("two messages should have been published", () => {
@@ -187,6 +190,7 @@ Feature("Trigger sequence by http call", () => {
 
     Then("the status code should be 200 OK", () => {
       response.statusCode.should.eql(200, response.text);
+      response.body.should.have.property("correlationId");
     });
 
     And("two messages should have been published", () => {
