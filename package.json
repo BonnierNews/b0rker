@@ -1,6 +1,6 @@
 {
   "name": "@bonniernews/b0rker",
-  "version": "7.5.3",
+  "version": "7.5.4",
   "engines": {
     "node": ">=16"
   },
@@ -29,7 +29,7 @@
     "@google-cloud/pubsub": "^4.0.7",
     "axios": "^1.6.2",
     "exp-config": "^4.2.1",
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "express-promise-router": "^4.1.1",
     "google-auth-library": "^9.4.1",
     "joi": "^17.11.0",
