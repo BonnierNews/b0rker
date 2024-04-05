@@ -13,7 +13,8 @@
     "localPort": 8123,
     "selfUrl": "http://host.docker.internal:8080",
     "queues": {
-      "default": "projects/project-id/locations/location/queues/foo-queue"
+      "default": "projects/project-id/locations/location/queues/foo-queue",
+      "concurrencyLimited": "projects/project-id/locations/location/queues/limited-queue"
     }
   },
   "maxResumeCount": 10,

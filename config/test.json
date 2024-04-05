@@ -13,7 +13,8 @@
     "localPort": 8123,
     "selfUrl": "https://b0rker.bn.nr",
     "queues": {
-      "default": "projects/project-id/locations/location/queues/foo-queue"
+      "default": "projects/project-id/locations/location/queues/foo-queue",
+      "concurrencyLimited": "projects/project-id/locations/location/queues/limited-queue"
     }
   },
   "gcpProxy": {
