@@ -12,10 +12,9 @@ import cloudTasksRouter from "./lib/cloud-tasks/router.js";
 
 export { default as buildContext } from "./lib/context.js";
 
-export function route(key, fn) {
-  const result = {};
-  result[key] = fn;
-  return result;
+export function route(key, fn, { queue } = {}) {
+  if (fn) fn.queue = queue; // Ugly hack to pass the queue along to the cloud tasks router, remove when removing pubsub support
+  return { [key]: fn };
 }
 
 export function start({ recipes, triggers, startServer = true }) {
