@@ -2,20 +2,21 @@
   "topic": "b0rker",
   "appName": "b0rker",
   "logging": {
-    "log": "file",
+    "log": "stdout",
     "logLevel": "debug",
-    "logJson": false
+    "logJson": true
   },
   "deadLetterTopic": "dead-letter-topic",
   "jobStorage": "memory",
   "jobStorageBuckets": 10,
   "cloudTasks": {
     "localPort": 8123,
-    "selfUrl": "https://b0rker.bn.nr",
+    "selfUrl": "http://host.docker.internal:8080",
     "queues": {
       "default": "projects/project-id/locations/location/queues/foo-queue"
     }
   },
+  "maxResumeCount": 10,
   "gcpProxy": {
     "url": "https://some-base.local",
     "audience": "some-aud"
