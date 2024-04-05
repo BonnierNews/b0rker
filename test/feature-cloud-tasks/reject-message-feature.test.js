@@ -51,7 +51,7 @@ Feature("Reject message", () => {
 
     And("that message should show that it originates from cloud tasks", () => {
       deadLetterMessage.attributes.origin.should.eql("cloudTasks");
-      deadLetterMessage.attributes.queue.should.eql(config.cloudTasks.queue.split("/").pop());
+      deadLetterMessage.attributes.queue.should.eql(config.cloudTasks.queues.default.split("/").pop());
     });
   });
 });

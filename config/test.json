@@ -12,7 +12,9 @@
   "cloudTasks": {
     "localPort": 8123,
     "selfUrl": "https://b0rker.bn.nr",
-    "queue": "projects/project-id/locations/location/queues/foo-queue"
+    "queues": {
+      "default": "projects/project-id/locations/location/queues/foo-queue"
+    }
   },
   "gcpProxy": {
     "url": "https://some-base.local",

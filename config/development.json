@@ -12,7 +12,9 @@
   "cloudTasks": {
     "localPort": 8123,
     "selfUrl": "http://host.docker.internal:8080",
-    "queue": "projects/project-id/locations/location/queues/foo-queue"
+    "queues": {
+      "default": "projects/project-id/locations/location/queues/foo-queue"
+    }
   },
   "maxResumeCount": 10,
   "gcpProxy": {
