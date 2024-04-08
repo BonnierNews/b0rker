@@ -117,7 +117,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           topic: "b0rker",
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
-          retryCount: maxRetries + 1,
+          retryCount: (maxRetries + 1).toString(),
         },
       });
     });
