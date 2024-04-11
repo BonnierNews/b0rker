@@ -1,6 +1,6 @@
 {
   "name": "@bonniernews/b0rker",
-  "version": "8.2.0",
+  "version": "8.3.0",
   "engines": {
     "node": ">=16"
   },
