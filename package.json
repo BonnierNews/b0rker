@@ -24,8 +24,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@bonniernews/gcp-push-metrics": "^3.2.1",
-    "@google-cloud/firestore": "^6.4.1",
+    "@bonniernews/gcp-push-metrics": "^4.0.0",
+    "@google-cloud/firestore": "^7.6.0",
     "@google-cloud/pubsub": "^4.0.7",
     "@google-cloud/tasks": "^5.1.1",
     "axios": "^1.6.2",
