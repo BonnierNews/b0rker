@@ -56,13 +56,11 @@ Feature("Resending a stuck message", () => {
 
     And("the resend number should be included in the task names", () => {
       const queue = config.cloudTasks.queues.default;
-      response.messages
-        .map(({ taskName }) => taskName)
-        .should.eql([
-          `${queue}/tasks/sequence_test_perform_second__some-epic-id__re1`,
-          `${queue}/tasks/sequence_test_perform_third__some-epic-id`,
-          `${queue}/tasks/sequence_test_processed__some-epic-id`,
-        ]);
+      const [ taskName1, taskName2, taskName3 ] = response.messages.map(({ taskName }) => taskName);
+
+      taskName1.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_second__.*__some-epic-id__re1`));
+      taskName2.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_third__.*__some-epic-id`));
+      taskName3.should.match(new RegExp(`${queue}/tasks/sequence_test_processed__.*__some-epic-id`));
     });
   });
 
@@ -118,13 +116,11 @@ Feature("Resending a stuck message", () => {
 
     And("the resend number should be included in the task names", () => {
       const queue = config.cloudTasks.queues.default;
-      response.messages
-        .map(({ taskName }) => taskName)
-        .should.eql([
-          `${queue}/tasks/sequence_test_perform_second__some-epic-id__re4`,
-          `${queue}/tasks/sequence_test_perform_third__some-epic-id`,
-          `${queue}/tasks/sequence_test_processed__some-epic-id`,
-        ]);
+      const [ taskName1, taskName2, taskName3 ] = response.messages.map(({ taskName }) => taskName);
+
+      taskName1.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_second__.*__some-epic-id__re4`));
+      taskName2.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_third__.*__some-epic-id`));
+      taskName3.should.match(new RegExp(`${queue}/tasks/sequence_test_processed__.*__some-epic-id`));
     });
   });
 });
