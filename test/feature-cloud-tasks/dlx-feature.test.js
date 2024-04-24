@@ -115,6 +115,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           key: "sequence.test.perform.http-step",
           origin: "cloudTasks",
           topic: "b0rker",
+          runId: fakePubSub.recordedMessages()[0].attributes.runId,
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: (maxRetries + 1).toString(),
