@@ -412,4 +412,100 @@ Feature("Grandchild processes", () => {
       });
     }
   });
+
+  Scenario("Unsuccessfully attempt to triple-nest sub-sequences", () => {
+    let broker;
+    Given("a broker recipe that has sub-sequences nested too deep", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".perform.trigger-create-children-step", () => ({
+                type: "trigger",
+                key: "sub-sequence.child-subseq",
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
+              })),
+              route(".perform.resumed-after-children", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "child-subseq",
+            sequence: [
+              route(".trigger-sub-sequence.create-grandchildren-step", () => ({
+                type: "trigger",
+                key: "sub-sequence.grandchild-subseq",
+                messages: [ { id: "grandchild-1" }, { id: "grandchild-2" } ],
+              })),
+              route(".perform.resumed-after-grandchildren", () => ({
+                type: "Grandchildren done",
+                id: "goodbye",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "grandchild-subseq",
+            sequence: [
+              route(".trigger-sub-sequence.create-great-grandchildren-step", () => ({
+                type: "trigger",
+                key: "sub-sequence.great-grandchild-subseq",
+                messages: [ { id: "great-grandchild-1" }, { id: "great-grandchild-2" } ],
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "great-grandchild-subseq",
+            sequence: [
+              route(".perform.something-in-great-grandchild", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { triggerMessage },
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+      );
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("only some messages should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(18);
+    });
+
+    let finalMessage;
+    And("the final message should be on the DLX", () => {
+      finalMessage = fakePubSub.recordedMessages().pop();
+      finalMessage.topic.should.eql("dead-letter-topic");
+    });
+
+    And("the final response should indicate that we've nested too deep", () => {
+      finalMessage.message.error.message.should.eql("It is only possible to nest one level of sub-sequences, you're trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you're trying to do, or implement great-grandchilden in b0rker...");
+    });
+  });
 });
