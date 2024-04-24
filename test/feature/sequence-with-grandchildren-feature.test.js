@@ -126,7 +126,7 @@ Feature("Grandchild processes", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
@@ -204,6 +204,212 @@ Feature("Grandchild processes", () => {
         });
       });
 
+    }
+  });
+
+  Scenario("Sequence starts a sub-sequence that starts another sub-sequence", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".perform.trigger-create-children-step", () => ({
+                type: "trigger",
+                key: "sub-sequence.child-subseq",
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
+              })),
+              route(".perform.resumed-after-children", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "child-subseq",
+            sequence: [
+              route(".trigger-sub-sequence.create-grandchildren-step", () => ({
+                type: "trigger",
+                key: "sub-sequence.grandchild-subseq",
+                messages: [ { id: "grandchild-1" }, { id: "grandchild-2" } ],
+              })),
+              route(".perform.resumed-after-grandchildren", () => ({
+                type: "Grandchildren done",
+                id: "goodbye",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "grandchild-subseq",
+            sequence: [
+              route(".perform.something-in-grandchild", ({ id }) => ({
+                type: `I was here ${id}`,
+                id,
+              })),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await fakePubSub.triggerMessage(
+        broker,
+        { triggerMessage },
+        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+      );
+    });
+
+    Then("the status code should be 200 OK", () => {
+      response.statusCode.should.eql(200, response.text);
+    });
+
+    And("all messages including children should have been published", () => {
+      fakePubSub.recordedMessages().length.should.eql(24);
+    });
+
+    let childCorrelationIds = new Set();
+    And("the triggering sequence should have been fulfilled", () => {
+      const triggeredSequence = fakePubSub.recordedMessages().filter((m) => m.attributes.correlationId === "abc123");
+      triggeredSequence
+        .map(({ attributes: { key } }) => ({ key }))
+        .should.eql([
+          { key: "sequence.test.perform.do-something" },
+          { key: "sequence.test.perform.trigger-create-children-step" },
+          { key: "sequence.test.perform.resumed-after-children" },
+          { key: "sequence.test.processed" },
+        ]);
+      fakePubSub.recordedMessages().forEach(({ attributes: { parentCorrelationId, correlationId } }) => {
+        if (parentCorrelationId?.endsWith("abc123")) {
+          childCorrelationIds.add(correlationId);
+        }
+      });
+      childCorrelationIds = [ ...childCorrelationIds ];
+    });
+
+    for (let index = 0; index < 2; index++) {
+      const childName = index === 0 ? "first" : "second";
+      const childNumber = index + 1;
+      const childId = `child-${childNumber}`;
+
+      let childCorrelationId;
+      let childsParentCorrelationId;
+      let childSequence;
+      // eslint-disable-next-line no-loop-func
+      And(`the ${childName} child sub-sequence should have been fulfilled`, () => {
+        childCorrelationId = childCorrelationIds[index];
+        childsParentCorrelationId = "sequence.test.perform.trigger-create-children-step:abc123";
+        childSequence = fakePubSub
+          .recordedMessages()
+          .filter(
+            (m) =>
+              (m.attributes.correlationId === childCorrelationId ||
+              m.attributes.parentCorrelationId === childsParentCorrelationId) && m.message.id === childId
+          );
+        childSequence
+          .map(({ message: { id }, attributes: { key, correlationId, parentCorrelationId } }) => ({
+            id,
+            key,
+            correlationId,
+            parentCorrelationId,
+          }))
+          .should.eql([
+            {
+              id: childId,
+              key: "trigger.sub-sequence.child-subseq",
+              correlationId: childCorrelationId,
+              parentCorrelationId: childsParentCorrelationId,
+            },
+            {
+              id: childId,
+              key: "sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step",
+              correlationId: childCorrelationId,
+              parentCorrelationId: childsParentCorrelationId,
+            },
+            {
+              id: childId,
+              key: "sub-sequence.child-subseq.perform.resumed-after-grandchildren",
+              correlationId: childCorrelationId,
+              parentCorrelationId: childsParentCorrelationId,
+            },
+            {
+              id: childId,
+              key: "sub-sequence.child-subseq.processed",
+              correlationId: childCorrelationId,
+              parentCorrelationId: childsParentCorrelationId,
+            },
+          ]);
+      });
+
+      And(`the children of the ${childName} sub-sequence should have been added to the database and been completed`, () => {
+        jobStorage.getDB()[childsParentCorrelationId].completedJobsCount.should.eql(2);
+      });
+
+      And(`the ${childName} sub-sequence's parent data should be saved in DB`, () => {
+        jobStorage.getDB()[childsParentCorrelationId].message.should.eql({
+          triggerMessage: { type: "advertisement-order", id: "some-order-id" },
+          data: [ { type: "something", id: 1 } ],
+        });
+      });
+
+      And(`the grandchildren of the ${childName} sub-sequence should have been fulfilled`, () => {
+        const expectedParentCorrelationId = `sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step:${childCorrelationId}`;
+        const grandChildSequences = fakePubSub
+          .recordedMessages()
+          .filter(
+            (m) => m.attributes.parentCorrelationId === expectedParentCorrelationId);
+
+        grandChildSequences
+          .map(({ message: { id }, attributes: { key, parentCorrelationId } }) => ({
+            id,
+            key,
+            parentCorrelationId,
+          })).should.eql([
+            {
+              id: "grandchild-1",
+              key: "trigger.sub-sequence.grandchild-subseq",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-1",
+              key: "sub-sequence.grandchild-subseq.perform.something-in-grandchild",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-1",
+              key: "sub-sequence.grandchild-subseq.processed",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-2",
+              key: "trigger.sub-sequence.grandchild-subseq",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-2",
+              key: "sub-sequence.grandchild-subseq.perform.something-in-grandchild",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-2",
+              key: "sub-sequence.grandchild-subseq.processed",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+          ]);
+      });
     }
   });
 });
