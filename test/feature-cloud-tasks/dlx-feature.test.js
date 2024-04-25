@@ -1,6 +1,8 @@
 import { fakeCloudTasks, fakePubSub } from "@bonniernews/lu-test";
 import config from "exp-config";
 import request from "supertest";
+import { createSandbox } from "sinon";
+import { CloudTasksClient } from "@google-cloud/tasks";
 
 import { start, route } from "../../index.js";
 
@@ -9,6 +11,7 @@ const maxRetries = config.maxRetries || 10;
 Feature("Messages with too many retries get sent to the DLX", () => {
   afterEachScenario(() => {
     fakeCloudTasks.reset();
+    fakePubSub.reset();
   });
 
   Scenario("A message gets retried the last time", () => {
@@ -121,6 +124,185 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           retryCount: (maxRetries + 1).toString(),
         },
       });
+    });
+  });
+});
+
+Feature("Sequence trigger failure gets sent to the DLX", () => {
+  const sandbox = createSandbox();
+
+  afterEachScenario(() => {
+    fakePubSub.reset();
+    sandbox.restore();
+  });
+
+  Scenario("An error is raised in the sequence start handler", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.http-step", () => {
+                return { type: "testing", id: "some-epic-id" };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish pubsub messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    And("Cloud Tasks throws an error", () => {
+      sandbox.stub(CloudTasksClient.prototype).createTask = () => {
+        throw new Error("Cloud Tasks error");
+      };
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await request(broker)
+        .post("/v2/sequence/test")
+        .set({ "correlation-id": "some-epic-id" })
+        .send({});
+    });
+
+    Then("the status code should be 500 error", () => {
+      response.statusCode.should.eql(500, response.text);
+    });
+
+    And("one messages should have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(1);
+      fakePubSub
+        .recordedMessages()[0]
+        .should.deep.eql({
+          attributes: {
+            appName: config.appName,
+            correlationId: "some-epic-id",
+            topic: config.topic,
+            retryCount: "0",
+            runId: fakePubSub.recordedMessages()[0].attributes.runId,
+            relativeUrl: "sequence/test",
+            key: "sequence.test",
+            origin: "cloudTasks",
+          },
+          deliveryAttempt: 1,
+          message: { error: { message: "Failed to start sequence" } },
+          topic: config.deadLetterTopic,
+        });
+    });
+  });
+
+  Scenario("An error is raised in the trigger handler", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.http-step", () => {
+                return { type: "testing", id: "some-epic-id" };
+              }),
+            ],
+          },
+        ],
+        triggers: { "trigger.start": () => ({ type: "trigger", key: "sequence.test", messages: [ { attributes: {} } ] }) },
+      });
+    });
+
+    And("we can publish pubsub messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    And("Cloud Tasks throws an error", () => {
+      sandbox.stub(CloudTasksClient.prototype).createTask = () => {
+        throw new Error("Cloud Tasks error");
+      };
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await request(broker)
+        .post("/v2/trigger/start")
+        .set({ "correlation-id": "some-epic-id" })
+        .send({});
+    });
+
+    Then("the status code should be 500 error", () => {
+      response.statusCode.should.eql(500, response.text);
+    });
+
+    And("one messages should have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(1);
+      fakePubSub
+        .recordedMessages()[0]
+        .should.deep.eql({
+          attributes: {
+            appName: config.appName,
+            correlationId: "some-epic-id",
+            topic: config.topic,
+            retryCount: "0",
+            runId: fakePubSub.recordedMessages()[0].attributes.runId,
+            relativeUrl: "trigger/start",
+            key: "trigger.start",
+            origin: "cloudTasks",
+          },
+          deliveryAttempt: 1,
+          message: { error: { message: "Failed to start trigger" } },
+          topic: config.deadLetterTopic,
+        });
+    });
+  });
+
+  Scenario("A request is made to an unknown sequence", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.http-step", () => {
+                return { type: "testing", id: "some-epic-id" };
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish pubsub messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    And("Cloud Tasks throws an error", () => {
+      sandbox.stub(CloudTasksClient.prototype).createTask = () => {
+        throw new Error("Cloud Tasks error");
+      };
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      response = await request(broker).post("/v2/sequence/unknown").send({});
+    });
+
+    Then("the status code should be 404 not found", () => {
+      response.statusCode.should.eql(404, response.text);
+    });
+
+    And("no messages should have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(0);
     });
   });
 });
