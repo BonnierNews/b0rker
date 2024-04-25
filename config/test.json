@@ -23,6 +23,7 @@
   },
   "setXThrottle": true,
   "toggle": {
-    "checkIdempotency": true
+    "checkIdempotency": true,
+    "throwOnNonStringValues": true
   }
 }
