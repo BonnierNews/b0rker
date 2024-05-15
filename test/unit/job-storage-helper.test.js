@@ -106,7 +106,6 @@ describe("parent payload", () => {
       startedJobsCount: 2,
       message,
       nextKey,
-      concurrentRequests: 0,
       completedJobsCount: 0,
     });
   });
