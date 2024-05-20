@@ -1,7 +1,7 @@
 import { fakeCloudTasks } from "@bonniernews/lu-test";
 import express from "express";
 
-import { publishTask } from "../../lib/cloud-tasks/publish-task.js";
+import { publishTask } from "../../lib/publish-task.js";
 
 describe("Cloud Task names", () => {
   const broker = express();
