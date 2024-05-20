@@ -2,10 +2,10 @@ import express from "express";
 import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
 import assert from "assert";
-
 import "express-async-errors";
+import { logger } from "lu-logger";
+
 import { validate } from "./lib/recipe-repo.js";
-import buildLogger from "./lib/logger.js";
 import cloudTasksRouter from "./lib/router.js";
 
 export { default as buildContext } from "./lib/context.js";
@@ -49,7 +49,7 @@ export function start({ recipes, triggers, startServer = true }) {
   if (startServer) {
     const port = process.env.PORT || 8080;
     app.listen(port, () => {
-      buildLogger().info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
+      logger.info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
     });
   }
   /* c8 ignore stop */
