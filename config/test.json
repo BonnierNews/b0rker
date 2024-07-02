@@ -15,7 +15,8 @@
     "queues": {
       "default": "projects/project-id/locations/location/queues/foo-queue",
       "concurrencyLimited": "projects/project-id/locations/location/queues/limited-queue"
-    }
+    },
+    "maxPublicationRetries": 0
   },
   "gcpProxy": {
     "url": "https://some-base.local",

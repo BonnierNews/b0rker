@@ -15,7 +15,8 @@
     "queues": {
       "default": "projects/project-id/locations/location/queues/foo-queue",
       "concurrencyLimited": "projects/project-id/locations/location/queues/limited-queue"
-    }
+    },
+    "maxPublicationRetries": 5
   },
   "maxResumeCount": 10,
   "gcpProxy": {
