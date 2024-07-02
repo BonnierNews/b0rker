@@ -1,5 +1,4 @@
-import request from "supertest";
-import { fakePubSub } from "@bonniernews/lu-test";
+import { fakeCloudTasks } from "@bonniernews/lu-test";
 
 import { start } from "../../index.js";
 
@@ -9,9 +8,6 @@ const triggerMessage = {
 };
 
 Feature("Trigger handler", () => {
-  afterEachScenario(() => {
-    fakePubSub.reset();
-  });
   Scenario("Trigger a sequence with one lambda", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
@@ -21,7 +17,7 @@ Feature("Trigger handler", () => {
           "trigger.order": (message) => {
             const { type } = message;
             if (type === "advertisement-order") {
-              return { type: "trigger", id: "sequence.advertisement-order" };
+              return { type: "trigger", key: "trigger.sequence.advertisement-order" };
             }
             throw new Error("Unknown type");
           },
@@ -30,25 +26,21 @@ Feature("Trigger handler", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger http call is received", async () => {
-      response = await request(broker).post("/trigger/advertisement-order").send(triggerMessage);
+      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("two messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(1);
+      response.messages.length.should.eql(1);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [],

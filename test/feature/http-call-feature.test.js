@@ -1,5 +1,5 @@
 import nock from "nock";
-import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
+import { fakeCloudTasks, fakeGcpAuth } from "@bonniernews/lu-test";
 import config from "exp-config";
 
 import { start, route } from "../../index.js";
@@ -16,7 +16,6 @@ Feature("Make http call from lambda", () => {
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
   });
   afterEachScenario(() => {
-    fakePubSub.reset();
     fakeGcpAuth.reset();
   });
 
@@ -28,7 +27,7 @@ Feature("Make http call from lambda", () => {
       fakeApi.get("/test").reply(200, { id: "123" });
     });
 
-    Given("broker is initiated with a recipe", () => {
+    And("broker is initiated with a recipe", () => {
       broker = start({
         startServer: false,
         recipes: [
@@ -46,17 +45,13 @@ Feature("Make http call from lambda", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the endpoint should have been called", () => {
@@ -64,9 +59,8 @@ Feature("Make http call from lambda", () => {
     });
 
     And("there should be a processed message", () => {
-      const last = fakePubSub.recordedMessages()[fakePubSub.recordedMessages().length - 1];
-      last.attributes.key.should.eql("sequence.test.processed");
-      last.message.data.should.eql([ { type: "testing", id: "123" } ]);
+      response.url.should.eql("/v2/sequence/test/processed");
+      response.message.data.should.eql([ { type: "testing", id: "123" } ]);
     });
   });
 
@@ -77,7 +71,7 @@ Feature("Make http call from lambda", () => {
       fakeApi.get("/some/test").reply(200, { id: "123" });
     });
 
-    Given("broker is initiated with a recipe", () => {
+    And("broker is initiated with a recipe", () => {
       broker = start({
         startServer: false,
         recipes: [
@@ -95,17 +89,13 @@ Feature("Make http call from lambda", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.test" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the endpoint should have been called", () => {
@@ -113,57 +103,8 @@ Feature("Make http call from lambda", () => {
     });
 
     And("there should be a processed message", () => {
-      const last = fakePubSub.recordedMessages()[fakePubSub.recordedMessages().length - 1];
-      last.attributes.key.should.eql("sequence.test.processed");
-      last.message.data.should.eql([ { type: "testing", id: "123" } ]);
-    });
-  });
-
-  Scenario("Trigger a trigger handler from http, broken response key", () => {
-    let broker;
-    Given("broker is initiated with a recipe", () => {
-      broker = start({
-        startServer: false,
-        triggers: {
-          "trigger.order": () => {
-            return { type: "trigger", key: "trigger.advertisement-order" };
-          },
-        },
-        recipes: [],
-      });
-    });
-
-    let response;
-    When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
-    });
-
-    Then("the status code should be 400 Bad Request", () => {
-      response.statusCode.should.eql(400, response.text);
-    });
-  });
-
-  Scenario("Trigger a trigger handler from http, source for sub-sequence is not an array", () => {
-    let broker;
-    Given("broker is initiated with a recipe", () => {
-      broker = start({
-        startServer: false,
-        triggers: {
-          "trigger.order": () => {
-            return { type: "trigger", key: "trigger.sub-sequence.some-order", source: {} };
-          },
-        },
-        recipes: [],
-      });
-    });
-
-    let response;
-    When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
-    });
-
-    Then("the status code should be 400 Bad Request", () => {
-      response.statusCode.should.eql(400, response.text);
+      response.url.should.eql("/v2/sequence/test/processed");
+      response.message.data.should.eql([ { type: "testing", id: "123" } ]);
     });
   });
 
@@ -205,31 +146,25 @@ Feature("Make http call from lambda", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { ...triggerMessage, attributes: { keepAttr: 1, someAttr: 2 } },
-        { key: "trigger.order" }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", {
+        ...triggerMessage,
+        attributes: { keepAttr: 1, someAttr: 2 },
+      });
     });
 
-    Then("the status code should be 200 Ok", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("we should have published 4 messages", () => {
-      fakePubSub.recordedMessages().length.should.eql(4);
+    And("we should have published 6 messages", () => {
+      response.messages.length.should.eql(6);
     });
 
     And("we should have recorded 2 processed messages", () => {
-      fakePubSub
-        .recordedMessages()
-        .filter(({ attributes }) => attributes.key === "sequence.a-notification.processed")
+      response.messages
+        .filter(({ url }) => url === "/v2/sequence/a-notification/processed")
         .length.should.eql(2);
     });
   });
@@ -245,7 +180,7 @@ Feature("Make http call from lambda", () => {
             return {
               type: "trigger",
               key: "trigger.sequence.a-notification",
-              messages: { type: "some-type", id: "123" },
+              messages: [ { type: "some-type", id: "123" } ],
             };
           },
         },
@@ -253,21 +188,21 @@ Feature("Make http call from lambda", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
     });
 
-    Then("the status code should be 400 Bad Request", () => {
-      response.statusCode.should.eql(400, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("we should have published 0 messages", () => {
-      fakePubSub.recordedMessages().length.should.eql(0);
+    And("we should have published 1 message", () => {
+      response.messages.length.should.eql(1);
+    });
+
+    But("the published message should have gotten a 404", () => {
+      response.messageHandlerResponses[0].statusCode.should.eql(404);
     });
   });
 
@@ -286,21 +221,17 @@ Feature("Make http call from lambda", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("we should have published 0 messages", () => {
-      fakePubSub.recordedMessages().length.should.eql(0);
+      response.messages.length.should.eql(0);
     });
   });
 });

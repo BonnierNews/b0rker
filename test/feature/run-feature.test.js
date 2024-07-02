@@ -1,4 +1,4 @@
-import { runSequence } from "@bonniernews/lu-test";
+import { fakeCloudTasks } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
 
@@ -33,17 +33,21 @@ Feature("Broker sequence with 'run'", () => {
       correlationId: "some-corr-id",
     };
 
-    let last;
+    let response;
     When("a trigger message is received", async () => {
-      last = await runSequence(broker, "trigger.sequence.advertisement-order", triggerMessage);
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
+    });
+
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      last.message.data.length.should.eql(3);
+      response.messages.length.should.eql(4);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      last.message.should.eql({
+      response.messages.pop().message.should.eql({
         ...triggerMessage,
         data: [
           { type: "step-1", id: "step-1-was-here" },
@@ -87,17 +91,17 @@ Feature("Broker sequence with 'run'", () => {
       id: "some-order-id",
     };
 
-    let last;
+    let response;
     When("a trigger message is received", async () => {
-      last = await runSequence(broker, "trigger.sequence.advertisement-order", triggerMessage);
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
+    });
+
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      last.message.data.length.should.eql(3);
-    });
-
-    And("last message should contain the original topic", () => {
-      last.attributes.topic.should.eql("b0rker");
+      response.messages.length.should.eql(4);
     });
 
     And("they should all have the same correlationId, despite not sending any", () => {
@@ -105,7 +109,7 @@ Feature("Broker sequence with 'run'", () => {
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      last.message.should.eql({
+      response.messages.pop().message.should.eql({
         ...triggerMessage,
         data: [
           { type: "step-1", id: "step-1-was-here" },
@@ -146,23 +150,28 @@ Feature("Broker sequence with 'run'", () => {
         ],
       });
     });
+
     const triggerMessage = {
       type: "advertisement-order",
       id: "some-order-id",
       correlationId: "some-corr-id",
     };
 
-    let last;
+    let response;
     When("a trigger message is received", async () => {
-      last = await runSequence(broker, "trigger.order", triggerMessage);
+      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
     });
 
-    Then("four messages should have been published", () => {
-      last.message.data.length.should.eql(2);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
+    });
+
+    And("four messages should have been published", () => {
+      response.messages.length.should.eql(4);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      last.message.should.eql({
+      response.messages.pop().message.should.eql({
         ...triggerMessage,
         data: [
           { type: "step-1", id: "step-1-was-here" },

@@ -2,13 +2,11 @@ import express from "express";
 import expressPromiseRouter from "express-promise-router";
 import config from "exp-config";
 import assert from "assert";
-
 import "express-async-errors";
-import { init } from "./lib/recipe-repo.js";
-import buildLogger from "./lib/logger.js";
-import messageHandler from "./lib/message-handler.js";
-import { trigger } from "./lib/trigger-handler.js";
-import cloudTasksRouter from "./lib/cloud-tasks/router.js";
+import { logger } from "lu-logger";
+
+import { validate } from "./lib/recipe-repo.js";
+import cloudTasksRouter from "./lib/router.js";
 
 export { default as buildContext } from "./lib/context.js";
 
@@ -26,7 +24,7 @@ export function start({ recipes, triggers, startServer = true }) {
   // use PubSubs message size limit
   app.use(express.json({ limit: "32mb" }));
 
-  const recipeMap = init(recipes, triggers);
+  validate(recipes, triggers);
 
   router.use((req, _, next) => {
     // middleware to handle requests via a proxy
@@ -40,9 +38,9 @@ export function start({ recipes, triggers, startServer = true }) {
     res.send("Im alive - som fan!");
   });
 
-  router.post("/message", messageHandler.bind(messageHandler, recipeMap));
-  router.post("/trigger/:namespace/:sequence", trigger.bind(trigger, recipeMap));
-  router.post("/trigger/:name", trigger.bind(trigger, recipeMap));
+  router.get("/_status", (req, res) => {
+    res.send({ status: "ok" });
+  });
 
   app.use(router);
   app.use("/v2", cloudTasksRouter(recipes, triggers));
@@ -51,7 +49,7 @@ export function start({ recipes, triggers, startServer = true }) {
   if (startServer) {
     const port = process.env.PORT || 8080;
     app.listen(port, () => {
-      buildLogger().info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
+      logger.info(`${config.appName}: listening on port ${port}, env ${config.envName}`);
     });
   }
   /* c8 ignore stop */

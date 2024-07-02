@@ -1,4 +1,4 @@
-import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
+import { fakeCloudTasks, fakeGcpAuth } from "@bonniernews/lu-test";
 import nock from "nock";
 
 import { start, route } from "../../index.js";
@@ -13,58 +13,66 @@ const grandchildMessages = (childNumber, granchildCorrelationIds) => {
   const childCorrelationId = `abc123:${childNumber - 1}`;
   const parentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:${childCorrelationId}`;
   const childId = `child-${childNumber}`;
+
   return [
     {
       id: childId,
-      key: "sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step",
+      url: "/v2/sequence/test-seq2",
+      correlationId: childCorrelationId,
+      parentCorrelationId: undefined,
+    },
+    {
+      id: childId,
+      url: "/v2/sequence/test-seq2/trigger-sub-sequence.create-grandchildren-step",
       correlationId: childCorrelationId,
       parentCorrelationId: undefined,
     },
     {
       id: "grandchild-1",
-      key: "trigger.sub-sequence.test-subseq",
-      parentCorrelationId,
-      correlationId: granchildCorrelationIds[0],
-    },
-    {
-      id: "grandchild-1",
-      key: "sub-sequence.test-subseq.perform.something-in-child",
-      parentCorrelationId,
-      correlationId: granchildCorrelationIds[0],
-    },
-    {
-      id: "grandchild-1",
-      key: "sub-sequence.test-subseq.processed",
+      url: "/v2/sub-sequence/test-subseq",
       parentCorrelationId,
       correlationId: granchildCorrelationIds[0],
     },
     {
       id: "grandchild-2",
-      key: "trigger.sub-sequence.test-subseq",
+      url: "/v2/sub-sequence/test-subseq",
       parentCorrelationId,
       correlationId: granchildCorrelationIds[1],
     },
     {
+      id: "grandchild-1",
+      url: "/v2/sub-sequence/test-subseq/perform.something-in-child",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[0],
+    },
+    {
       id: "grandchild-2",
-      key: "sub-sequence.test-subseq.perform.something-in-child",
+      url: "/v2/sub-sequence/test-subseq/perform.something-in-child",
       parentCorrelationId,
       correlationId: granchildCorrelationIds[1],
     },
     {
+      id: "grandchild-1",
+      url: "/v2/sub-sequence/test-subseq/processed",
+      parentCorrelationId,
+      correlationId: granchildCorrelationIds[0],
+    },
+    {
       id: "grandchild-2",
-      key: "sub-sequence.test-subseq.processed",
+      url: "/v2/sub-sequence/test-subseq/processed",
       parentCorrelationId,
       correlationId: granchildCorrelationIds[1],
     },
     {
       id: childId,
-      key: "sequence.test-seq2.processed",
+      url: "/v2/sequence/test-seq2/processed",
       correlationId: childCorrelationId,
       parentCorrelationId: undefined,
     },
   ];
 };
 
+// FIXME: refactor this to clean it up and make it more readable
 Feature("Grandchild processes", () => {
   beforeEachScenario(() => {
     fakeGcpAuth.authenticated();
@@ -72,7 +80,6 @@ Feature("Grandchild processes", () => {
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
   });
   afterEachScenario(() => {
-    fakePubSub.reset();
     fakeGcpAuth.reset();
     jobStorage.clearDB();
   });
@@ -126,36 +133,28 @@ Feature("Grandchild processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage },
-        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("all messages including children should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(20);
+      response.messages.length.should.eql(22);
     });
 
     And("the triggering sequence should have been fulfilled", () => {
-      const triggeredSequence = fakePubSub.recordedMessages().filter((m) => m.attributes.correlationId === "abc123");
+      const triggeredSequence = response.messages.filter((m) => m.correlationId === "abc123");
       triggeredSequence
-        .map(({ attributes: { key } }) => ({ key }))
+        .map(({ url }) => ({ url }))
         .should.eql([
-          { key: "sequence.test.perform.do-something" },
-          { key: "sequence.test.perform.trigger-create-children-step" },
-          { key: "sequence.test.perform.resumed-after-sequence" },
-          { key: "sequence.test.processed" },
+          { url: "/v2/sequence/test/perform.do-something" },
+          { url: "/v2/sequence/test/perform.trigger-create-children-step" },
+          { url: "/v2/sequence/test/perform.resumed-after-sequence" },
+          { url: "/v2/sequence/test/processed" },
         ]);
     });
 
@@ -164,29 +163,24 @@ Feature("Grandchild processes", () => {
       const childCorrelationId = `abc123:${index}`;
       const childsParentCorrelationId = `sequence.test-seq2.trigger-sub-sequence.create-grandchildren-step:abc123:${index}`;
 
+      // eslint-disable-next-line no-loop-func
       And(`the ${childName} child sequence should have been fulfilled`, () => {
-        const childSequence = fakePubSub
-          .recordedMessages()
-          .filter(
-            (m) =>
-              m.attributes.correlationId === childCorrelationId ||
-              m.attributes.parentCorrelationId === childsParentCorrelationId
-          );
+        const childSequence = response.messages.filter(
+          (m) => m.correlationId === childCorrelationId || m.headers.parentCorrelationId === childsParentCorrelationId
+        );
+
         const grandchildCorrelationIds = [
           ...new Set(
             childSequence
-              .filter(
-                (m) =>
-                  m.attributes.parentCorrelationId === childsParentCorrelationId
-              )
-              .map(({ attributes: { correlationId } }) => correlationId)
+              .filter((m) => m.headers.parentCorrelationId === childsParentCorrelationId)
+              .map(({ headers: { "correlation-id": correlationId } }) => correlationId)
           ),
         ];
 
         childSequence
-          .map(({ message: { id }, attributes: { key, correlationId, parentCorrelationId } }) => ({
+          .map(({ url, message: { id }, headers: { "correlation-id": correlationId, parentCorrelationId } }) => ({
             id,
-            key,
+            url,
             correlationId,
             parentCorrelationId,
           }))
@@ -203,7 +197,6 @@ Feature("Grandchild processes", () => {
           data: [],
         });
       });
-
     }
   });
 
@@ -260,39 +253,31 @@ Feature("Grandchild processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage },
-        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("all messages including children should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(24);
+    And("all messages including children and grandchildren should have been published", () => {
+      response.messages.length.should.eql(24);
     });
 
     let childCorrelationIds = new Set();
     And("the triggering sequence should have been fulfilled", () => {
-      const triggeredSequence = fakePubSub.recordedMessages().filter((m) => m.attributes.correlationId === "abc123");
+      const triggeredSequence = response.messages.filter((m) => m.correlationId === "abc123");
       triggeredSequence
-        .map(({ attributes: { key } }) => ({ key }))
+        .map(({ url }) => ({ url }))
         .should.eql([
-          { key: "sequence.test.perform.do-something" },
-          { key: "sequence.test.perform.trigger-create-children-step" },
-          { key: "sequence.test.perform.resumed-after-children" },
-          { key: "sequence.test.processed" },
+          { url: "/v2/sequence/test/perform.do-something" },
+          { url: "/v2/sequence/test/perform.trigger-create-children-step" },
+          { url: "/v2/sequence/test/perform.resumed-after-children" },
+          { url: "/v2/sequence/test/processed" },
         ]);
-      fakePubSub.recordedMessages().forEach(({ attributes: { parentCorrelationId, correlationId } }) => {
+      response.messages.forEach(({ headers: { correlationId, parentCorrelationId } }) => {
         if (parentCorrelationId?.endsWith("abc123")) {
           childCorrelationIds.add(correlationId);
         }
@@ -312,42 +297,41 @@ Feature("Grandchild processes", () => {
       And(`the ${childName} child sub-sequence should have been fulfilled`, () => {
         childCorrelationId = childCorrelationIds[index];
         childsParentCorrelationId = "sequence.test.perform.trigger-create-children-step:abc123";
-        childSequence = fakePubSub
-          .recordedMessages()
+        childSequence = response.messages
           .filter(
             (m) =>
-              (m.attributes.correlationId === childCorrelationId ||
-              m.attributes.parentCorrelationId === childsParentCorrelationId) && m.message.id === childId
+              (m.headers.correlationId === childCorrelationId ||
+              m.headers.parentCorrelationId === childsParentCorrelationId) && m.message.id === childId
           );
         childSequence
-          .map(({ message: { id }, attributes: { key, correlationId, parentCorrelationId } }) => ({
+          .map(({ message: { id }, url, headers: { correlationId, parentCorrelationId } }) => ({
             id,
-            key,
+            url,
             correlationId,
             parentCorrelationId,
           }))
           .should.eql([
             {
               id: childId,
-              key: "trigger.sub-sequence.child-subseq",
+              url: "/v2/sub-sequence/child-subseq",
               correlationId: childCorrelationId,
               parentCorrelationId: childsParentCorrelationId,
             },
             {
               id: childId,
-              key: "sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step",
+              url: "/v2/sub-sequence/child-subseq/trigger-sub-sequence.create-grandchildren-step",
               correlationId: childCorrelationId,
               parentCorrelationId: childsParentCorrelationId,
             },
             {
               id: childId,
-              key: "sub-sequence.child-subseq.perform.resumed-after-grandchildren",
+              url: "/v2/sub-sequence/child-subseq/perform.resumed-after-grandchildren",
               correlationId: childCorrelationId,
               parentCorrelationId: childsParentCorrelationId,
             },
             {
               id: childId,
-              key: "sub-sequence.child-subseq.processed",
+              url: "/v2/sub-sequence/child-subseq/processed",
               correlationId: childCorrelationId,
               parentCorrelationId: childsParentCorrelationId,
             },
@@ -360,52 +344,53 @@ Feature("Grandchild processes", () => {
 
       And(`the ${childName} sub-sequence's parent data should be saved in DB`, () => {
         jobStorage.getDB()[childsParentCorrelationId].message.should.eql({
-          triggerMessage: { type: "advertisement-order", id: "some-order-id" },
+          type: "advertisement-order",
+          id: "some-order-id",
           data: [ { type: "something", id: 1 } ],
         });
       });
 
+      // eslint-disable-next-line no-loop-func
       And(`the grandchildren of the ${childName} sub-sequence should have been fulfilled`, () => {
         const expectedParentCorrelationId = `sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step:${childCorrelationId}`;
-        const grandChildSequences = fakePubSub
-          .recordedMessages()
+        const grandChildSequences = response.messages
           .filter(
-            (m) => m.attributes.parentCorrelationId === expectedParentCorrelationId);
+            (m) => m.headers.parentCorrelationId === expectedParentCorrelationId);
 
         grandChildSequences
-          .map(({ message: { id }, attributes: { key, parentCorrelationId } }) => ({
+          .map(({ message: { id }, url, headers: { parentCorrelationId } }) => ({
             id,
-            key,
+            url,
             parentCorrelationId,
           })).should.eql([
             {
               id: "grandchild-1",
-              key: "trigger.sub-sequence.grandchild-subseq",
+              url: "/v2/sub-sequence/grandchild-subseq",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-2",
+              url: "/v2/sub-sequence/grandchild-subseq",
               parentCorrelationId: expectedParentCorrelationId,
             },
             {
               id: "grandchild-1",
-              key: "sub-sequence.grandchild-subseq.perform.something-in-grandchild",
+              url: "/v2/sub-sequence/grandchild-subseq/perform.something-in-grandchild",
+              parentCorrelationId: expectedParentCorrelationId,
+            },
+            {
+              id: "grandchild-2",
+              url: "/v2/sub-sequence/grandchild-subseq/perform.something-in-grandchild",
               parentCorrelationId: expectedParentCorrelationId,
             },
             {
               id: "grandchild-1",
-              key: "sub-sequence.grandchild-subseq.processed",
+              url: "/v2/sub-sequence/grandchild-subseq/processed",
               parentCorrelationId: expectedParentCorrelationId,
             },
             {
               id: "grandchild-2",
-              key: "trigger.sub-sequence.grandchild-subseq",
-              parentCorrelationId: expectedParentCorrelationId,
-            },
-            {
-              id: "grandchild-2",
-              key: "sub-sequence.grandchild-subseq.perform.something-in-grandchild",
-              parentCorrelationId: expectedParentCorrelationId,
-            },
-            {
-              id: "grandchild-2",
-              key: "sub-sequence.grandchild-subseq.processed",
+              url: "/v2/sub-sequence/grandchild-subseq/processed",
               parentCorrelationId: expectedParentCorrelationId,
             },
           ]);
@@ -477,35 +462,27 @@ Feature("Grandchild processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage },
-        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("only some messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(18);
+      response.messages.length.should.eql(14);
     });
 
-    let finalMessage;
-    And("the final message should be on the DLX", () => {
-      finalMessage = fakePubSub.recordedMessages().pop();
-      finalMessage.topic.should.eql("dead-letter-topic");
+    let finalResponse;
+    And("the final response status code should be 400", () => {
+      finalResponse = response.messageHandlerResponses.pop();
+      finalResponse.statusCode.should.eql(400, response.text);
     });
 
     And("the final response should indicate that we've nested too deep", () => {
-      finalMessage.message.error.message.should.eql("It is only possible to nest one level of sub-sequences, you're trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you're trying to do, or implement great-grandchilden in b0rker...");
+      finalResponse.text.should.eql("It is only possible to nest one level of sub-sequences, you're trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you're trying to do, or implement great-grandchilden in b0rker...");
     });
   });
 });

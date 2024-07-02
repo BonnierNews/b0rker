@@ -1,5 +1,5 @@
 import config from "exp-config";
-import { fakePubSub } from "@bonniernews/lu-test";
+import { fakeCloudTasks, fakePubSub } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
 
@@ -9,9 +9,6 @@ const triggerMessage = {
 };
 
 Feature("Reject message", () => {
-  afterEachScenario(() => {
-    fakePubSub.reset();
-  });
   Scenario("Rejecting a message from a lambda", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
@@ -31,29 +28,30 @@ Feature("Reject message", () => {
       });
     });
 
-    Given("we can publish messages", () => {
+    And("we can publish pubsub messages", () => {
       fakePubSub.enablePublish(broker);
     });
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
+    let deadLetterMessage;
     And("that message should have published to dead letter queue", () => {
-      const deadLetterMessage = fakePubSub.recordedMessages().pop();
+      deadLetterMessage = fakePubSub.recordedMessages().pop();
       deadLetterMessage.topic.should.eql(config.deadLetterTopic);
       deadLetterMessage.message.error.should.eql({ message: "rejected because.." });
       deadLetterMessage.attributes.key.should.eql("sequence.advertisement-order.perform.step-1");
     });
 
-    And("that message should preserve the original topic", () => {
-      const deadLetterMessage = fakePubSub.recordedMessages().pop();
-      deadLetterMessage.attributes.topic.should.eql("b0rker");
+    And("that message should show that it originates from cloud tasks", () => {
+      deadLetterMessage.attributes.origin.should.eql("cloudTasks");
+      deadLetterMessage.attributes.queue.should.eql(config.cloudTasks.queues.default.split("/").pop());
     });
   });
 });

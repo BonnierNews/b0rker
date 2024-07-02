@@ -1,6 +1,6 @@
 {
   "name": "@bonniernews/b0rker",
-  "version": "9.5.0",
+  "version": "10.0.0",
   "engines": {
     "node": ">=18"
   },
@@ -24,7 +24,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@bonniernews/gcp-push-metrics": "^4.0.0",
     "@google-cloud/firestore": "^7.6.0",
     "@google-cloud/pubsub": "^4.0.7",
     "@google-cloud/tasks": "^5.3.0",
@@ -38,7 +37,6 @@
     "google-gax": "^4.3.1",
     "joi": "^17.11.0",
     "lu-logger": "github:BonnierNews/lu-logger#semver:^7.3.1",
-    "pino": "^8.16.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

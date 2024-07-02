@@ -1,4 +1,4 @@
-import { fakePubSub } from "@bonniernews/lu-test";
+import { fakeCloudTasks } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
 
@@ -8,9 +8,6 @@ const triggerMessage = {
 };
 
 Feature("Broker sequence", () => {
-  afterEachScenario(() => {
-    fakePubSub.reset();
-  });
   Scenario("Trigger a sequence with one lambda", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
@@ -30,35 +27,23 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.advertisement-order",
-        correlationId: "some-correlation-id",
-        parentCorrelationId: undefined,
-      });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage, { "correlation-id": "some-correlation-id" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("two messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(2);
+      response.messages.length.should.eql(2);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.eql({
-        correlationId: "some-correlation-id",
-        key: "sequence.advertisement-order.processed",
-        idempotencyKey: last.attributes.idempotencyKey,
-        topic: "b0rker",
-      });
+      const last = [ ...response.messages ].pop();
+      last.url.should.eql("/v2/sequence/advertisement-order/processed");
+      last.headers.correlationId.should.eql("some-correlation-id");
       last.message.should.eql({
         ...triggerMessage,
         data: [ { type: "step-1", id: "step-1-was-here" } ],
@@ -91,25 +76,21 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(4);
+      response.messages.length.should.eql(4);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [
@@ -149,34 +130,29 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(4);
+      response.messages.length.should.eql(4);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      fakePubSub
-        .recordedMessages()
-        .map((m) => m.attributes.key)
+      response.messages
+        .map((m) => m.url)
         .should.eql([
-          "sequence.advertisement-order.perform.step-1",
-          "sequence.advertisement-order.perform.step-2",
-          "sequence.advertisement-order.perform.step-2.unrecoverable",
-          "sequence.advertisement-order.perform.step-2.unrecoverable.processed",
+          "/v2/sequence/advertisement-order/perform.step-1",
+          "/v2/sequence/advertisement-order/perform.step-2",
+          "/v2/sequence/advertisement-order/perform.step-2/unrecoverable",
+          "/v2/sequence/advertisement-order/perform.step-2/unrecoverable/processed",
         ]);
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         error: { message: "some error" },
@@ -213,25 +189,21 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(3);
+      response.messages.length.should.eql(3);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [
@@ -264,26 +236,21 @@ Feature("Broker sequence", () => {
         ],
       });
     });
-
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("four messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(3);
+      response.messages.length.should.eql(3);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [ { type: "step-2", id: "step-2-was-here" } ],
@@ -312,11 +279,11 @@ Feature("Broker sequence", () => {
 
     let response;
     When("an unknown trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.unknown" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/unknown", triggerMessage);
     });
 
-    Then("the status code should be 400 Bad request", () => {
-      response.statusCode.should.eql(400, response.text);
+    Then("the status code should be 404 not found", () => {
+      response.firstResponse.statusCode.should.eql(404, response.text);
     });
   });
 
@@ -342,58 +309,25 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("two messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(2);
+      response.messages.length.should.eql(2);
     });
 
     And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
+      const last = [ ...response.messages ].pop();
       last.message.should.eql({
         ...triggerMessage,
         data: [ { type: "step-1", id: "step-1-was-here" } ],
       });
-    });
-  });
-
-  Scenario("Message without key", () => {
-    let broker;
-    Given("broker is initiated with a recipe", () => {
-      broker = start({
-        startServer: false,
-        recipes: [
-          {
-            namespace: "sequence",
-            name: "advertisement-order",
-            sequence: [
-              route(".perform.step-1", () => {
-                return { type: "step-1", id: "step-1-was-here" };
-              }),
-            ],
-          },
-        ],
-      });
-    });
-
-    let response;
-    When("a message without key is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {});
-    });
-
-    Then("the status code should be 400 Bad request", () => {
-      response.statusCode.should.eql(400, response.text);
     });
   });
 
@@ -429,17 +363,13 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the first lambda should have gotten the message", () => {
@@ -498,45 +428,35 @@ Feature("Broker sequence", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, {
-        key: "trigger.sequence.bananas",
-        correlationId: "some-correlation-id",
-      });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/bananas", triggerMessage, { "correlation-id": "some-correlation-id" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("two messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(9);
+    And("twelve messages should have been published", () => {
+      response.messages.length.should.eql(12);
     });
 
     And("we should have 4 processed sequences", () => {
-      fakePubSub
-        .recordedMessages()
-        .filter(({ attributes }) => attributes.key.endsWith(".processed"))
-        .length.should.eql(4);
+      response.messages.filter(({ url }) => url.endsWith("/processed")).length.should.eql(4);
     });
 
-    And("last message should contain original message and appended data from the first lambda", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.eql({
-        correlationId: "some-correlation-id",
-        key: "sequence.bananas.processed",
-        idempotencyKey: last.attributes.idempotencyKey,
-        topic: "b0rker",
-      });
-      last.message.should.eql({
-        ...triggerMessage,
-        data: [ { type: "step-1", id: "bananas-1-was-here" } ],
-      });
-    });
+    And(
+      "last message from the main sequence should contain original message and appended data from the first lambda",
+      () => {
+        const last = response.messages.filter(({ url }) => url.startsWith("/v2/sequence/bananas")).pop();
+
+        last.correlationId.should.eql("some-correlation-id");
+        last.url.should.eql("/v2/sequence/bananas/processed");
+        last.message.should.eql({
+          ...triggerMessage,
+          data: [ { type: "step-1", id: "bananas-1-was-here" } ],
+        });
+      }
+    );
   });
 });

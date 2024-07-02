@@ -1,4 +1,4 @@
-import { fakePubSub, fakeGcpAuth } from "@bonniernews/lu-test";
+import { fakeCloudTasks, fakeGcpAuth } from "@bonniernews/lu-test";
 import nock from "nock";
 
 import { start, route } from "../../index.js";
@@ -14,10 +14,8 @@ Feature("Child processes", () => {
     fakeGcpAuth.authenticated();
     nock.disableNetConnect();
     nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
-    fakePubSub.reset();
   });
   afterEachScenario(() => {
-    fakePubSub.reset();
     fakeGcpAuth.reset();
     jobStorage.clearDB();
   });
@@ -63,36 +61,29 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
+      response = await fakeCloudTasks.runSequence(
         broker,
+        "/v2/sequence/test",
         { triggerMessage },
-        // parentCorrelationId being undefined below should not affect the outcome
-        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
+        { "correlation-id": "abc123" }
       );
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("all messages including children should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(10);
+      response.messages.length.should.eql(10);
     });
     And("the last message should have correct format", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.contain({ key: "sequence.test.processed" });
+      const last = [ ...response.messages ].pop();
+      last.url.should.eql("/v2/sequence/test/processed");
       last.message.data.should.eql([
         { type: "something", id: 1 },
-        {
-          id: 2,
-          type: "sub-sequence.test2.processed",
-        },
+        { id: 2, type: "sub-sequence.test2.processed" },
         { type: "I am done", id: "hello" },
       ]);
     });
@@ -147,25 +138,17 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage, correlationId: "abc123" },
-        { key: "trigger.sequence.test" }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the message should be nacked because of bad handler response", () => {
-      fakePubSub.recordedMessageHandlerResponses()[0].statusCode.should.eql(400);
+      response.messageHandlerResponses[0].statusCode.should.eql(400);
     });
   });
 
@@ -205,25 +188,17 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage, correlationId: "abc123" },
-        { key: "trigger.sequence.test" }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the message should be nacked because of bad handler response", () => {
-      fakePubSub.recordedMessageHandlerResponses()[0].statusCode.should.eql(400);
+      response.messageHandlerResponses[0].statusCode.should.eql(400);
     });
   });
 
@@ -268,30 +243,21 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage },
-        // parentCorrelationId being undefined below should not affect the outcome
-        { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("all messages should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(4);
+      response.messages.length.should.eql(4);
     });
     And("the last message should have correct format", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.contain({ key: "sequence.test.processed" });
+      const last = [ ...response.messages ].pop();
+      last.url.should.eql("/v2/sequence/test/processed");
       last.message.data.should.eql([
         { type: "something", id: 1 },
         { type: "I am done", id: "hello" },
@@ -338,25 +304,17 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage, correlationId: "abc123" },
-        { key: "trigger.sequence.test" }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("the message should be nacked because of bad handler response", () => {
-      fakePubSub.recordedMessageHandlerResponses()[0].statusCode.should.eql(400);
+      response.messageHandlerResponses[0].statusCode.should.eql(400);
     });
   });
 
@@ -380,29 +338,21 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(
-        broker,
-        { triggerMessage, correlationId: "abc123" },
-        { key: "trigger.sub-sequence.test2" }
-      );
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sub-sequence/test2", triggerMessage, { "correlation-id": "abc123" });
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("all messages including children should have been published", () => {
-      fakePubSub.recordedMessages().length.should.eql(2);
+      response.messages.length.should.eql(2);
     });
     And("the last message should have correct format", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.contain({ key: "sub-sequence.test2.processed" });
+      const last = [ ...response.messages ].pop();
+      last.url.should.eql("/v2/sub-sequence/test2/processed");
     });
     And("the children should not have been added to the database", () => {
       jobStorage.getDB().should.eql({});
@@ -450,79 +400,64 @@ Feature("Child processes", () => {
       });
     });
 
-    And("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
-    let response;
+    let response, allMessages;
     When("a trigger message is received, twice", async () => {
-      response = await Promise.all([
-        fakePubSub.triggerMessage(
-          broker,
-          { triggerMessage },
-          // parentCorrelationId being undefined below should not affect the outcome
-          { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-        ),
-        fakePubSub.triggerMessage(
-          broker,
-          { triggerMessage },
-          // parentCorrelationId being undefined below should not affect the outcome
-          { key: "trigger.sequence.test", correlationId: "abc123", parentCorrelationId: undefined }
-        ),
-      ]);
+      response = [
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", { triggerMessage }, { "correlation-id": "abc123" }),
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", { triggerMessage }, { "correlation-id": "abc123" }),
+      ];
+      allMessages = response.flatMap((r) => r.messages);
     });
 
-    Then("the first status code should be 200 OK", () => {
-      response[0].statusCode.should.eql(200, response[0].text);
+    Then("the first status code should be 201 Created", () => {
+      response[0].firstResponse.statusCode.should.eql(201, response[0].text);
     });
 
-    And("the second status code should be 200 OK", () => {
-      response[1].statusCode.should.eql(200, response[1].text);
+    And("the second status code should be 201 Created", () => {
+      response[1].firstResponse.statusCode.should.eql(201, response[1].text);
     });
 
     And("all messages including children should have been published once, and the create-children-step twice", () => {
-      fakePubSub.recordedMessages().length.should.eql(12);
+      allMessages.length.should.eql(12);
     });
 
     And("the sequence should have been triggered twice", () => {
-      fakePubSub
-        .recordedMessages()
-        .filter((message) => message.attributes.key === "sequence.test.perform.do-something")
+      allMessages
+        .filter((message) => message.url === "/v2/sequence/test/perform.do-something")
         .length.should.eql(2);
     });
 
     And("the sub-sequence should have been triggered twice", () => {
-      fakePubSub
-        .recordedMessages()
-        .filter((message) => message.attributes.key === "sequence.test.trigger-sub-sequence.create-children-step")
+      allMessages
+        .filter((message) => message.url === "/v2/sequence/test/trigger-sub-sequence.create-children-step")
         .length.should.eql(2);
     });
 
     And("all other steps should have only been triggered once", () => {
-      const steps = [ ...new Set(fakePubSub
-        .recordedMessages()
-        .filter(
-          (message) =>
-            message.attributes.key !== "sequence.test.perform.do-something" &&
-            message.attributes.key !== "sequence.test.trigger-sub-sequence.create-children-step"
-        )
-        .map((message) => {
-          return { id: message.message.id, key: message.attributes.key };
-        })) ];
+      const steps = [
+        ...new Set(
+          allMessages
+            .filter(
+              (message) =>
+                message.url !== "/v2/sequence/test/perform.do-something" &&
+                message.url !== "/v2/sequence/test/trigger-sub-sequence.create-children-step"
+            )
+            .map(({ message: { id }, url }) => ({ id, url }))
+        ),
+      ];
       steps.forEach((step) => {
-        const numCalls = fakePubSub
-          .recordedMessages()
-          .filter((message) => message.attributes.key === step.key && message.message.id === step.id).length;
-          // we just care about numCalls, but compare an object so we can see which step is failing, if any
-        const expected = { id: step.id, key: step.key, numCalls };
-        expected.should.eql({ id: step.id, key: step.key, numCalls: 1 });
+        const numCalls = allMessages.filter(
+          (message) => message.url === step.url && message.message.id === step.id
+        ).length;
+        // we just care about numCalls, but compare an object so we can see which step is failing, if any
+        const expected = { id: step.id, url: step.url, numCalls };
+        expected.should.eql({ id: step.id, url: step.url, numCalls: 1 });
       });
     });
 
     And("the last message should have correct format", () => {
-      const last = [ ...fakePubSub.recordedMessages() ].pop();
-      last.attributes.should.contain({ key: "sequence.test.processed" });
-      last.message.data.should.eql([
+      const processedMessage = allMessages.find((m) => m.url === "/v2/sequence/test/processed");
+      processedMessage.message.data.should.eql([
         { type: "something", id: 1 },
         {
           id: 2,
