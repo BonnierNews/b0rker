@@ -112,12 +112,11 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       fakePubSub.recordedMessages()[0].should.deep.eql({
         deliveryAttempt: 1,
         message: { error: { message: "Max retries reached" } },
-        topic: "dead-letter-topic",
+        topic: config.deadLetterTopic,
         attributes: {
           correlationId: "some-epic-id",
           key: "sequence.test.perform.http-step",
           origin: "cloudTasks",
-          topic: "b0rker",
           runId: fakePubSub.recordedMessages()[0].attributes.runId,
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
@@ -185,7 +184,6 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           attributes: {
             appName: config.appName,
             correlationId: "some-epic-id",
-            topic: config.topic,
             retryCount: "0",
             runId: fakePubSub.recordedMessages()[0].attributes.runId,
             relativeUrl: "sequence/test",
@@ -249,7 +247,6 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           attributes: {
             appName: config.appName,
             correlationId: "some-epic-id",
-            topic: config.topic,
             retryCount: "0",
             runId: fakePubSub.recordedMessages()[0].attributes.runId,
             relativeUrl: "trigger/start",

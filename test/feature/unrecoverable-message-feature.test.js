@@ -1,4 +1,4 @@
-import { fakePubSub } from "@bonniernews/lu-test";
+import { fakeCloudTasks } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
 
@@ -8,9 +8,6 @@ const triggerMessage = {
 };
 
 Feature("Unrecoverable message", () => {
-  afterEachScenario(() => {
-    fakePubSub.reset();
-  });
   Scenario("Unrecoverable message from a lambda", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
@@ -30,22 +27,18 @@ Feature("Unrecoverable message", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("that message should have published with an unrecoverable suffix", () => {
-      const messages = fakePubSub.recordedMessages().pop();
-      messages.attributes.key.should.eql("sequence.advertisement-order.perform.step-1.unrecoverable");
+      const messages = response.messages.pop();
+      messages.url.should.eql("/v2/sequence/advertisement-order/perform.step-1/unrecoverable");
     });
   });
 
@@ -68,23 +61,19 @@ Feature("Unrecoverable message", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("that message should have published with an unrecoverable suffix", () => {
-      const messages = fakePubSub.recordedMessages().pop();
-      messages.message.error.message.should.eql("this is an error message");
-      messages.attributes.key.should.eql("sequence.advertisement-order.perform.step-1.unrecoverable");
+      const message = response.messages.pop();
+      message.message.error.message.should.eql("this is an error message");
+      message.url.should.eql("/v2/sequence/advertisement-order/perform.step-1/unrecoverable");
     });
   });
 });

@@ -1,4 +1,4 @@
-import { fakePubSub } from "@bonniernews/lu-test";
+import { fakeCloudTasks } from "@bonniernews/lu-test";
 
 import { start, route } from "../../index.js";
 
@@ -8,9 +8,6 @@ const triggerMessage = {
 };
 
 Feature("Retry message", () => {
-  afterEachScenario(() => {
-    fakePubSub.reset();
-  });
   Scenario("Retrying a message from a lambda", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
@@ -30,25 +27,21 @@ Feature("Retry message", () => {
       });
     });
 
-    Given("we can publish messages", () => {
-      fakePubSub.enablePublish(broker);
-    });
-
     let response;
     When("a trigger message is received", async () => {
-      response = await fakePubSub.triggerMessage(broker, triggerMessage, { key: "trigger.sequence.advertisement-order" });
+      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
     });
 
-    Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
+    Then("the status code should be 201 Created", () => {
+      response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
     And("there should be one message handler response", () => {
-      fakePubSub.recordedMessageHandlerResponses().length.should.eql(1);
+      response.messageHandlerResponses.length.should.eql(1);
     });
 
     And("that message should have been nacked for retry", () => {
-      const last = fakePubSub.recordedMessageHandlerResponses().pop();
+      const last = response.messageHandlerResponses.pop();
       last.statusCode.should.eql(400, response.text);
     });
   });
