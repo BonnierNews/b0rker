@@ -464,25 +464,15 @@ Feature("Grandchild processes", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      } catch (error) {
+        response = error;
+      }
     });
 
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("only some messages should have been published", () => {
-      response.messages.length.should.eql(14);
-    });
-
-    let finalResponse;
-    And("the final response status code should be 400", () => {
-      finalResponse = response.messageHandlerResponses.pop();
-      finalResponse.statusCode.should.eql(400, response.text);
-    });
-
-    And("the final response should indicate that we've nested too deep", () => {
-      finalResponse.text.should.eql("It is only possible to nest one level of sub-sequences, you're trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you're trying to do, or implement great-grandchilden in b0rker...");
+    Then("the response should indicate that we've nested too deep", () => {
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"It is only possible to nest one level of sub-sequences, you\'re trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you\'re trying to do, or implement great-grandchilden in b0rker..."}');
     });
   });
 });

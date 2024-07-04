@@ -140,15 +140,15 @@ Feature("Child processes", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      } catch (error) {
+        response = error;
+      }
     });
 
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("the message should be nacked because of bad handler response", () => {
-      response.messageHandlerResponses[0].statusCode.should.eql(400);
+    Then("we should receive an error", () => {
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"Invalid result: messages need to be an array got: undefined"}');
     });
   });
 
@@ -190,15 +190,15 @@ Feature("Child processes", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      } catch (error) {
+        response = error;
+      }
     });
 
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("the message should be nacked because of bad handler response", () => {
-      response.messageHandlerResponses[0].statusCode.should.eql(400);
+    Then("we should receive an error", () => {
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"Invalid result: messages need to be an array got: undefined"}');
     });
   });
 
@@ -400,63 +400,33 @@ Feature("Child processes", () => {
       });
     });
 
-    let response, allMessages;
+    let response1, response2;
     When("a trigger message is received, twice", async () => {
-      response = [
-        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", { triggerMessage }, { "correlation-id": "abc123" }),
-        await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", { triggerMessage }, { "correlation-id": "abc123" }),
-      ];
-      allMessages = response.flatMap((r) => r.messages);
+      response1 = await fakeCloudTasks.runSequence(
+        broker,
+        "/v2/sequence/test",
+        { triggerMessage },
+        { "correlation-id": "abc123" }
+      );
+
+      try {
+        await fakeCloudTasks.runSequence(
+          broker,
+          "/v2/sequence/test",
+          { triggerMessage },
+          { "correlation-id": "abc123" }
+        );
+      } catch (error) {
+        response2 = error;
+      }
     });
 
     Then("the first status code should be 201 Created", () => {
-      response[0].firstResponse.statusCode.should.eql(201, response[0].text);
-    });
-
-    And("the second status code should be 201 Created", () => {
-      response[1].firstResponse.statusCode.should.eql(201, response[1].text);
-    });
-
-    And("all messages including children should have been published once, and the create-children-step twice", () => {
-      allMessages.length.should.eql(12);
-    });
-
-    And("the sequence should have been triggered twice", () => {
-      allMessages
-        .filter((message) => message.url === "/v2/sequence/test/perform.do-something")
-        .length.should.eql(2);
-    });
-
-    And("the sub-sequence should have been triggered twice", () => {
-      allMessages
-        .filter((message) => message.url === "/v2/sequence/test/trigger-sub-sequence.create-children-step")
-        .length.should.eql(2);
-    });
-
-    And("all other steps should have only been triggered once", () => {
-      const steps = [
-        ...new Set(
-          allMessages
-            .filter(
-              (message) =>
-                message.url !== "/v2/sequence/test/perform.do-something" &&
-                message.url !== "/v2/sequence/test/trigger-sub-sequence.create-children-step"
-            )
-            .map(({ message: { id }, url }) => ({ id, url }))
-        ),
-      ];
-      steps.forEach((step) => {
-        const numCalls = allMessages.filter(
-          (message) => message.url === step.url && message.message.id === step.id
-        ).length;
-        // we just care about numCalls, but compare an object so we can see which step is failing, if any
-        const expected = { id: step.id, url: step.url, numCalls };
-        expected.should.eql({ id: step.id, url: step.url, numCalls: 1 });
-      });
+      response1.firstResponse.statusCode.should.eql(201, response1.text);
     });
 
     And("the last message should have correct format", () => {
-      const processedMessage = allMessages.find((m) => m.url === "/v2/sequence/test/processed");
+      const processedMessage = response1.messages.find((m) => m.url === "/v2/sequence/test/processed");
       processedMessage.message.data.should.eql([
         { type: "something", id: 1 },
         {
@@ -479,6 +449,70 @@ Feature("Child processes", () => {
           },
         ],
       });
+    });
+
+    And("the second triggering should have resulted in an error", () => {
+      response2.message.should.eql('Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123"},"test":"{\\"type\\":\\"unknown\\",\\"message\\":\\"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123\\"}"}');
+    });
+  });
+
+  Scenario("Error occurs during sub-sequence processing", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.do-something", () => {
+                return { type: "something", id: 1 };
+              }),
+              route(".trigger-sub-sequence.create-children-step", () => ({
+                id: "123",
+                type: "trigger",
+                key: "sub-sequence.test2",
+                data: [],
+                messages: [ { id: "child-1" }, { id: "child-2" } ],
+              })),
+              route(".perform.resumed-after-sub-sequense", () => ({
+                type: "I am done",
+                id: "hello",
+              })),
+            ],
+          },
+          {
+            namespace: "sub-sequence",
+            name: "test2",
+            sequence: [
+              route(".perform.something-in-child", ({ id }) => {
+                throw new Error(`Something went wrong with ${id}`);
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    let response;
+    When("a trigger message is received", async () => {
+      try {
+        await fakeCloudTasks.runSequence(
+          broker,
+          "/v2/sequence/test",
+          { triggerMessage },
+          { "correlation-id": "abc123" }
+        );
+      } catch (error) {
+        response = error;
+      }
+    });
+
+    Then("we should receive an error", () => {
+      response.message.should.eql(
+        'Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"Something went wrong with child-1"},"test":"{\\"type\\":\\"unknown\\",\\"message\\":\\"Something went wrong with child-1\\"}"}'
+      );
     });
   });
 });

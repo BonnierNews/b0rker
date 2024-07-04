@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@bonniernews/eslint-config": "^1.0.1",
-    "@bonniernews/lu-test": "^9.1.2",
+    "@bonniernews/lu-test": "^10.0.1",
     "c8": "^8.0.1",
     "chai": "^4.3.10",
     "depcheck": "^1.4.7",

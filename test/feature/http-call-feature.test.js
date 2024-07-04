@@ -190,19 +190,15 @@ Feature("Make http call from lambda", () => {
 
     let response;
     When("a trigger http call is received for an unknown sequence", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
+      } catch (error) {
+        response = error;
+      }
     });
 
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("we should have published 1 message", () => {
-      response.messages.length.should.eql(1);
-    });
-
-    But("the published message should have gotten a 404", () => {
-      response.messageHandlerResponses[0].statusCode.should.eql(404);
+    Then("the published message should have gotten a 404", () => {
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":404,"body":{},"test":"<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n<meta charset=\\"utf-8\\">\\n<title>Error</title>\\n</head>\\n<body>\\n<pre>Cannot POST /v2/sequence/a-notification</pre>\\n</body>\\n</html>\\n"}');
     });
   });
 
