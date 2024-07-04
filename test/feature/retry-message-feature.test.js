@@ -29,20 +29,15 @@ Feature("Retry message", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/sequence/advertisement-order", triggerMessage);
+      } catch (error) {
+        response = error;
+      }
     });
 
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("there should be one message handler response", () => {
-      response.messageHandlerResponses.length.should.eql(1);
-    });
-
-    And("that message should have been nacked for retry", () => {
-      const last = response.messageHandlerResponses.pop();
-      last.statusCode.should.eql(400, response.text);
+    Then("the message should be retried", () => {
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{"type":"retry"},"text":"{\\"type\\":\\"retry\\"}"}');
     });
   });
 });

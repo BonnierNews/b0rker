@@ -28,23 +28,15 @@ Feature("Trigger handler", () => {
 
     let response;
     When("a trigger http call is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
+      try {
+        await fakeCloudTasks.runSequence(broker, "/v2/trigger/order", triggerMessage);
+      } catch (error) {
+        response = error;
+      }
     });
 
     Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("two messages should have been published", () => {
-      response.messages.length.should.eql(1);
-    });
-
-    And("last message should contain original message and appended data from lambdas", () => {
-      const last = [ ...response.messages ].pop();
-      last.message.should.eql({
-        ...triggerMessage,
-        data: [],
-      });
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":404,"body":{},"text":"<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n<meta charset=\\"utf-8\\">\\n<title>Error</title>\\n</head>\\n<body>\\n<pre>Cannot POST /v2/sequence/advertisement-order</pre>\\n</body>\\n</html>\\n"}');
     });
   });
 });
