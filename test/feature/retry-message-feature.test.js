@@ -37,7 +37,7 @@ Feature("Retry message", () => {
     });
 
     Then("the message should be retried", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{"type":"retry"},"test":"{\\"type\\":\\"retry\\"}"}');
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{"type":"retry"},"text":"{\\"type\\":\\"retry\\"}"}');
     });
   });
 });

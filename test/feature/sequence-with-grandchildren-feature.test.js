@@ -472,7 +472,7 @@ Feature("Grandchild processes", () => {
     });
 
     Then("the response should indicate that we've nested too deep", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"It is only possible to nest one level of sub-sequences, you\'re trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you\'re trying to do, or implement great-grandchilden in b0rker..."}');
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"It is only possible to nest one level of sub-sequences, you\'re trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you\'re trying to do, or implement great-grandchilden in b0rker..."}');
     });
   });
 });

@@ -198,7 +198,7 @@ Feature("Make http call from lambda", () => {
     });
 
     Then("the published message should have gotten a 404", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":404,"body":{},"test":"<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n<meta charset=\\"utf-8\\">\\n<title>Error</title>\\n</head>\\n<body>\\n<pre>Cannot POST /v2/sequence/a-notification</pre>\\n</body>\\n</html>\\n"}');
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":404,"body":{},"text":"<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n<meta charset=\\"utf-8\\">\\n<title>Error</title>\\n</head>\\n<body>\\n<pre>Cannot POST /v2/sequence/a-notification</pre>\\n</body>\\n</html>\\n"}');
     });
   });
 

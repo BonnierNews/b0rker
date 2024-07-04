@@ -148,7 +148,7 @@ Feature("Child processes", () => {
     });
 
     Then("we should receive an error", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"Invalid result: messages need to be an array got: undefined"}');
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}');
     });
   });
 
@@ -198,7 +198,7 @@ Feature("Child processes", () => {
     });
 
     Then("we should receive an error", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"test":"Invalid result: messages need to be an array got: undefined"}');
+      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}');
     });
   });
 
@@ -265,56 +265,6 @@ Feature("Child processes", () => {
     });
     And("nothing should have been added to the database", () => {
       should.not.exist(jobStorage.getDB()[parentCorrId]);
-    });
-  });
-
-  Scenario.skip("Handler without trigger-sub-sequence in route returns a sub-sequence trigger", () => {
-    let broker;
-    Given("broker is initiated with a recipe", () => {
-      broker = start({
-        startServer: false,
-        recipes: [
-          {
-            namespace: "sequence",
-            name: "test",
-            sequence: [
-              route(".perform.create-children-step", () => ({
-                id: "123",
-                type: "trigger",
-                key: "sub-sequence.test2",
-                messages: [ { id: "child-1" }, { id: "child-2" } ],
-              })),
-              route(".perform.resumed-after-sub-sequense", () => ({
-                type: "I am done",
-                id: "hello",
-              })),
-            ],
-          },
-          {
-            namespace: "sub-sequence",
-            name: "test2",
-            sequence: [
-              route(".perform.something-in-child", ({ id }) => ({
-                type: `I was here ${id}`,
-                id,
-              })),
-            ],
-          },
-        ],
-      });
-    });
-
-    let response;
-    When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
-    });
-
-    Then("the status code should be 201 Created", () => {
-      response.firstResponse.statusCode.should.eql(201, response.text);
-    });
-
-    And("the message should be nacked because of bad handler response", () => {
-      response.messageHandlerResponses[0].statusCode.should.eql(400);
     });
   });
 
@@ -452,7 +402,7 @@ Feature("Child processes", () => {
     });
 
     And("the second triggering should have resulted in an error", () => {
-      response2.message.should.eql('Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123"},"test":"{\\"type\\":\\"unknown\\",\\"message\\":\\"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123\\"}"}');
+      response2.message.should.eql('Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123"},"text":"{\\"type\\":\\"unknown\\",\\"message\\":\\"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123\\"}"}');
     });
   });
 
@@ -511,7 +461,7 @@ Feature("Child processes", () => {
 
     Then("we should receive an error", () => {
       response.message.should.eql(
-        'Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"Something went wrong with child-1"},"test":"{\\"type\\":\\"unknown\\",\\"message\\":\\"Something went wrong with child-1\\"}"}'
+        'Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"Something went wrong with child-1"},"text":"{\\"type\\":\\"unknown\\",\\"message\\":\\"Something went wrong with child-1\\"}"}'
       );
     });
   });
