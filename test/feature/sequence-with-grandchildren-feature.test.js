@@ -135,7 +135,13 @@ Feature("Grandchild processes", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/test", triggerMessage, { "correlation-id": "abc123" });
+      response = await fakeCloudTasks.runSequence(
+        broker,
+        "/v2/sequence/test",
+        triggerMessage,
+        { "correlation-id": "abc123" },
+        false
+      );
     });
 
     Then("the status code should be 201 Created", () => {
@@ -297,12 +303,12 @@ Feature("Grandchild processes", () => {
       And(`the ${childName} child sub-sequence should have been fulfilled`, () => {
         childCorrelationId = childCorrelationIds[index];
         childsParentCorrelationId = "sequence.test.perform.trigger-create-children-step:abc123";
-        childSequence = response.messages
-          .filter(
-            (m) =>
-              (m.headers.correlationId === childCorrelationId ||
-              m.headers.parentCorrelationId === childsParentCorrelationId) && m.message.id === childId
-          );
+        childSequence = response.messages.filter(
+          (m) =>
+            (m.headers.correlationId === childCorrelationId ||
+              m.headers.parentCorrelationId === childsParentCorrelationId) &&
+            m.message.id === childId
+        );
         childSequence
           .map(({ message: { id }, url, headers: { correlationId, parentCorrelationId } }) => ({
             id,
@@ -338,9 +344,12 @@ Feature("Grandchild processes", () => {
           ]);
       });
 
-      And(`the children of the ${childName} sub-sequence should have been added to the database and been completed`, () => {
-        jobStorage.getDB()[childsParentCorrelationId].completedJobsCount.should.eql(2);
-      });
+      And(
+        `the children of the ${childName} sub-sequence should have been added to the database and been completed`,
+        () => {
+          jobStorage.getDB()[childsParentCorrelationId].completedJobsCount.should.eql(2);
+        }
+      );
 
       And(`the ${childName} sub-sequence's parent data should be saved in DB`, () => {
         jobStorage.getDB()[childsParentCorrelationId].message.should.eql({
@@ -353,16 +362,17 @@ Feature("Grandchild processes", () => {
       // eslint-disable-next-line no-loop-func
       And(`the grandchildren of the ${childName} sub-sequence should have been fulfilled`, () => {
         const expectedParentCorrelationId = `sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step:${childCorrelationId}`;
-        const grandChildSequences = response.messages
-          .filter(
-            (m) => m.headers.parentCorrelationId === expectedParentCorrelationId);
+        const grandChildSequences = response.messages.filter(
+          (m) => m.headers.parentCorrelationId === expectedParentCorrelationId
+        );
 
         grandChildSequences
           .map(({ message: { id }, url, headers: { parentCorrelationId } }) => ({
             id,
             url,
             parentCorrelationId,
-          })).should.eql([
+          }))
+          .should.eql([
             {
               id: "grandchild-1",
               url: "/v2/sub-sequence/grandchild-subseq",
@@ -472,7 +482,9 @@ Feature("Grandchild processes", () => {
     });
 
     Then("the response should indicate that we've nested too deep", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"It is only possible to nest one level of sub-sequences, you\'re trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you\'re trying to do, or implement great-grandchilden in b0rker..."}');
+      response.message.should.eql(
+        'Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"It is only possible to nest one level of sub-sequences, you\'re trying to trigger sub-sequence.great-grandchild-subseq from sub-sequence.grandchild-subseq.trigger-sub-sequence.create-great-grandchildren-step which in turn was triggered from sub-sequence.child-subseq.trigger-sub-sequence.create-grandchildren-step - either rethink what you\'re trying to do, or implement great-grandchilden in b0rker..."}'
+      );
     });
   });
 });
