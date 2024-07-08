@@ -430,7 +430,13 @@ Feature("Broker sequence", () => {
 
     let response;
     When("a trigger message is received", async () => {
-      response = await fakeCloudTasks.runSequence(broker, "/v2/sequence/bananas", triggerMessage, { "correlation-id": "some-correlation-id" });
+      response = await fakeCloudTasks.runSequence(
+        broker,
+        "/v2/sequence/bananas",
+        triggerMessage,
+        { "correlation-id": "some-correlation-id" },
+        false
+      );
     });
 
     Then("the status code should be 201 Created", () => {

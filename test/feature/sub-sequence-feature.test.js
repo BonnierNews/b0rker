@@ -148,7 +148,9 @@ Feature("Child processes", () => {
     });
 
     Then("we should receive an error", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}');
+      response.message.should.eql(
+        'Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}'
+      );
     });
   });
 
@@ -198,7 +200,9 @@ Feature("Child processes", () => {
     });
 
     Then("we should receive an error", () => {
-      response.message.should.eql('Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}');
+      response.message.should.eql(
+        'Failed to process message, check the logs: {"statusCode":400,"body":{},"text":"Invalid result: messages need to be an array got: undefined"}'
+      );
     });
   });
 
@@ -402,7 +406,9 @@ Feature("Child processes", () => {
     });
 
     And("the second triggering should have resulted in an error", () => {
-      response2.message.should.eql('Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123"},"text":"{\\"type\\":\\"unknown\\",\\"message\\":\\"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123\\"}"}');
+      response2.message.should.eql(
+        'Failed to process message, check the logs: {"statusCode":500,"body":{"type":"unknown","message":"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123"},"text":"{\\"type\\":\\"unknown\\",\\"message\\":\\"6 ALREADY_EXISTS: Document already exists: memory/databases/(default)/documents/processed/sequence.test.trigger-sub-sequence.create-children-step:abc123\\"}"}'
+      );
     });
   });
 
