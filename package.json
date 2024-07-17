@@ -1,6 +1,6 @@
 {
   "name": "@bonniernews/b0rker",
-  "version": "10.1.1",
+  "version": "10.2.0",
   "engines": {
     "node": ">=18"
   },
@@ -36,7 +36,7 @@
     "google-auth-library": "^9.4.1",
     "google-gax": "^4.3.1",
     "joi": "^17.11.0",
-    "lu-logger": "github:BonnierNews/lu-logger#semver:^7.3.1",
+    "lu-logger": "github:BonnierNews/lu-logger#semver:^8.0.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
