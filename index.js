@@ -6,6 +6,7 @@ import "express-async-errors";
 import { logger } from "lu-logger";
 
 import { validate } from "./lib/recipe-repo.js";
+import validateConfig from "./lib/config-validator.js";
 import cloudTasksRouter from "./lib/router.js";
 
 export { default as buildContext } from "./lib/context.js";
@@ -17,6 +18,8 @@ export function route(key, fn, { queue } = {}) {
 
 export function start({ recipes, triggers, startServer = true }) {
   assert(config.appName, "appName must be set in config");
+
+  validateConfig(config);
 
   const router = expressPromiseRouter();
   const app = express();
