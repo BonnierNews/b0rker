@@ -90,13 +90,13 @@ Feature("Sequence with validation", () => {
 
     And("the message should have been sent to the DLX", () => {
       fakePubSub.recordedMessages().length.should.eql(1);
-      fakePubSub.recordedMessages()[0].message.error.message.should.eql('Validation error: "type" is required, "id" is required');
+      fakePubSub
+        .recordedMessages()[0]
+        .message.error.message.should.eql('Validation error: "type" is required, "id" is required');
     });
 
     And("the sequence should not be processed", () => {
-      response.messages
-        .map(({ url }) => url)
-        .should.eql([ "/v2/sequence/test-order/perform.step-1" ]);
+      response.messages.map(({ url }) => url).should.eql([ "/v2/sequence/test-order/perform.step-1" ]);
     });
   });
 
@@ -141,13 +141,15 @@ Feature("Sequence with validation", () => {
 
     And("the message should have been sent to the DLX", () => {
       fakePubSub.recordedMessages().length.should.eql(1);
-      fakePubSub.recordedMessages()[0].message.error.message.should.eql('Validation error: "attributes.foo" must be a string, "attributes.iShouldNotBeHere" is not allowed');
+      fakePubSub
+        .recordedMessages()[0]
+        .message.error.message.should.eql(
+          'Validation error: "attributes.foo" must be a string, "attributes.iShouldNotBeHere" is not allowed'
+        );
     });
 
     And("the sequence should not be processed", () => {
-      response.messages
-        .map(({ url }) => url)
-        .should.eql([ "/v2/sequence/test-order/perform.step-1" ]);
+      response.messages.map(({ url }) => url).should.eql([ "/v2/sequence/test-order/perform.step-1" ]);
     });
   });
 });
