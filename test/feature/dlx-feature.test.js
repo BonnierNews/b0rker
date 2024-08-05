@@ -1,10 +1,10 @@
 import { fakeCloudTasks, fakePubSub } from "@bonniernews/lu-test";
-import config from "exp-config";
-import request from "supertest";
-import { createSandbox } from "sinon";
 import { CloudTasksClient } from "@google-cloud/tasks";
+import config from "exp-config";
+import { createSandbox } from "sinon";
+import request from "supertest";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 
 const maxRetries = config.maxRetries || 10;
 

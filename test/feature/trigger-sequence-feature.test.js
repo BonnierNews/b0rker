@@ -2,7 +2,7 @@ import { fakeCloudTasks } from "@bonniernews/lu-test";
 import { expect } from "chai";
 import config from "exp-config";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",

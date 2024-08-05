@@ -1,7 +1,7 @@
 import { fakeCloudTasks } from "@bonniernews/lu-test";
 import config from "exp-config";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 
 Feature("Resending a stuck message", () => {
   afterEachScenario(() => {
