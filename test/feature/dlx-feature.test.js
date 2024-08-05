@@ -51,7 +51,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("there sequence should have been processed", () => {
+    And("the sequence should have been processed", () => {
       response.messages
         .map(({ url }) => url)
         .should.eql([ "/v2/sequence/test/perform.http-step", "/v2/sequence/test/processed" ]);
@@ -126,7 +126,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     });
   });
 
-  Scenario("A message doesn't retry because of no retry header", () => {
+  Scenario("A message runs once and then doesn't retry because of no retry header", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start({
@@ -136,8 +136,8 @@ Feature("Messages with too many retries get sent to the DLX", () => {
             namespace: "sequence",
             name: "test",
             sequence: [
-              route(".perform.http-step", () => {
-                return { type: "testing", id: "some-epic-id" };
+              route(".perform.http-step", (message, { retryIf }) => {
+                retryIf(true);
               }),
             ],
           },
@@ -153,18 +153,36 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       fakePubSub.enablePublish(broker);
     });
 
-    let response;
-    When("a specific message is received", async () => {
-      response = await request(broker)
+    let firstResponse;
+    When("a specific message is received the first time", async () => {
+      firstResponse = await request(broker)
         .post("/v2/sequence/test/perform.http-step")
-        .send({})
+        .send({ })
         .set({ "correlation-id": "some-epic-id", "x-no-retry": "true" });
       await fakeCloudTasks.processMessages();
     });
 
+    Then("the status code should be 400", () => {
+      firstResponse.statusCode.should.eql(400, firstResponse.text);
+      firstResponse.body.should.eql({ type: "retry" });
+    });
+
+    And("there should be no more processed messages", () => {
+      fakeCloudTasks.recordedMessages().length.should.eql(0);
+    });
+
+    let secondReponse;
+    When("the message is received the second time", async () => {
+      secondReponse = await request(broker)
+        .post("/v2/sequence/test/perform.http-step")
+        .send({ })
+        .set({ "correlation-id": "some-epic-id", "x-no-retry": "true", "x-cloudtasks-taskretrycount": 1 });
+      await fakeCloudTasks.processMessages();
+    });
+
     Then("the status code should be 200 OK", () => {
-      response.statusCode.should.eql(200, response.text);
-      response.body.should.eql({ type: "dlx", message: "Max retries reached" });
+      secondReponse.statusCode.should.eql(200, secondReponse.text);
+      secondReponse.body.should.eql({ type: "dlx", message: "Max retries reached" });
     });
 
     But("there should be no more processed messages", () => {
@@ -184,7 +202,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           runId: fakePubSub.recordedMessages()[0].attributes.runId,
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
-          retryCount: (0).toString(),
+          retryCount: "1",
         },
       });
     });
