@@ -51,7 +51,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       response.firstResponse.statusCode.should.eql(201, response.text);
     });
 
-    And("there sequence should have been processed", () => {
+    And("the sequence should have been processed", () => {
       response.messages
         .map(({ url }) => url)
         .should.eql([ "/v2/sequence/test/perform.http-step", "/v2/sequence/test/processed" ]);
@@ -121,6 +121,94 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: (maxRetries + 1).toString(),
+          skipRetries: "false",
+        },
+      });
+    });
+  });
+
+  Scenario("A message runs once and then doesn't retry because of no-retry header", () => {
+    let broker;
+    Given("broker is initiated with a recipe", () => {
+      broker = start({
+        startServer: false,
+        recipes: [
+          {
+            namespace: "sequence",
+            name: "test",
+            sequence: [
+              route(".perform.http-step", (message, { retryIf }) => {
+                retryIf(true);
+              }),
+            ],
+          },
+        ],
+      });
+    });
+
+    And("we can publish cloud tasks", () => {
+      fakeCloudTasks.enablePublish(broker);
+    });
+
+    And("we can publish pubsub messages", () => {
+      fakePubSub.enablePublish(broker);
+    });
+
+    let firstResponse;
+    When("a specific message is received the first time", async () => {
+      firstResponse = await request(broker)
+        .post("/v2/sequence/test/perform.http-step")
+        .send({})
+        .set({ "correlation-id": "some-epic-id", "x-no-retry": "true" });
+      await fakeCloudTasks.processMessages();
+    });
+
+    Then("the status code should be 400", () => {
+      firstResponse.statusCode.should.eql(400, firstResponse.text);
+      firstResponse.body.should.eql({ type: "retry" });
+    });
+
+    And("there should be no more processed messages", () => {
+      fakeCloudTasks.recordedMessages().length.should.eql(0);
+    });
+
+    But("the message should not have have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(0);
+    });
+
+    let secondReponse;
+    When("the message is received the second time", async () => {
+      secondReponse = await request(broker)
+        .post("/v2/sequence/test/perform.http-step")
+        .send({})
+        .set({ "correlation-id": "some-epic-id", "x-no-retry": "true", "x-cloudtasks-taskretrycount": 1 });
+      await fakeCloudTasks.processMessages();
+    });
+
+    Then("the status code should be 200 OK", () => {
+      secondReponse.statusCode.should.eql(200, secondReponse.text);
+      secondReponse.body.should.eql({ type: "dlx", message: "Max retries reached" });
+    });
+
+    But("there should be no more processed messages", () => {
+      fakeCloudTasks.recordedMessages().length.should.eql(0);
+    });
+
+    And("the message should have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(1);
+      fakePubSub.recordedMessages()[0].should.deep.eql({
+        deliveryAttempt: 1,
+        message: { error: { message: "Max retries reached" } },
+        topic: config.deadLetterTopic,
+        attributes: {
+          correlationId: "some-epic-id",
+          key: "sequence.test.perform.http-step",
+          origin: "cloudTasks",
+          runId: fakePubSub.recordedMessages()[0].attributes.runId,
+          appName: config.appName,
+          relativeUrl: "sequence/test/perform.http-step",
+          retryCount: "1",
+          skipRetries: "true",
         },
       });
     });
@@ -193,6 +281,7 @@ Feature("Manual retry gets sent to DLX", () => {
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: maxRetries.toString(),
+          skipRetries: "false",
         },
       });
     });
@@ -256,6 +345,7 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           relativeUrl: "sequence/test",
           key: "sequence.test",
           origin: "cloudTasks",
+          skipRetries: "false",
         },
         deliveryAttempt: 1,
         message: { error: { message: "Failed to start sequence" } },
@@ -314,6 +404,7 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           relativeUrl: "trigger/start",
           key: "trigger.start",
           origin: "cloudTasks",
+          skipRetries: "false",
         },
         deliveryAttempt: 1,
         message: { error: { message: "Failed to start trigger" } },
