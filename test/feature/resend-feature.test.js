@@ -128,6 +128,16 @@ Feature("Resending a stuck message", () => {
     And("the resend number should be included in the task names", () => {
       checkTaskNames(response.messages);
     });
+
+    And("the no retry header should be included in the task header for the first task", () => {
+      response.messages[0].headers["x-no-retry"].should.eql("true");
+    });
+
+    And("the no retry header should not be included in the task header for the remaining tasks", () => {
+      response.messages
+        .filter((_, index) => index > 0)
+        .forEach(({ headers }) => should.not.exist(headers["x-no-retry"]));
+    });
   });
 });
 
@@ -135,7 +145,9 @@ function checkTaskNames(messages, resendNumber = 0) {
   const queue = config.cloudTasks.queues.default;
   const [ taskName1, taskName2, taskName3 ] = messages.map(({ taskName }) => taskName);
 
-  taskName1.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_second__.*__some-epic-id__re${resendNumber + 1}`));
+  taskName1.should.match(
+    new RegExp(`${queue}/tasks/sequence_test_perform_second__.*__some-epic-id__re${resendNumber + 1}`)
+  );
   taskName2.should.match(new RegExp(`${queue}/tasks/sequence_test_perform_third__.*__some-epic-id`));
   taskName3.should.match(new RegExp(`${queue}/tasks/sequence_test_processed__.*__some-epic-id`));
 }

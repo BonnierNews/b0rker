@@ -121,6 +121,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: (maxRetries + 1).toString(),
+          skipRetries: "false",
         },
       });
     });
@@ -207,6 +208,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: "1",
+          skipRetries: "true",
         },
       });
     });
@@ -279,6 +281,7 @@ Feature("Manual retry gets sent to DLX", () => {
           appName: config.appName,
           relativeUrl: "sequence/test/perform.http-step",
           retryCount: maxRetries.toString(),
+          skipRetries: "false",
         },
       });
     });
@@ -342,6 +345,7 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           relativeUrl: "sequence/test",
           key: "sequence.test",
           origin: "cloudTasks",
+          skipRetries: "false",
         },
         deliveryAttempt: 1,
         message: { error: { message: "Failed to start sequence" } },
@@ -400,6 +404,7 @@ Feature("Sequence trigger failure gets sent to the DLX", () => {
           relativeUrl: "trigger/start",
           key: "trigger.start",
           origin: "cloudTasks",
+          skipRetries: "false",
         },
         deliveryAttempt: 1,
         message: { error: { message: "Failed to start trigger" } },
