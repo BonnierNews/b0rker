@@ -171,6 +171,10 @@ Feature("Messages with too many retries get sent to the DLX", () => {
       fakeCloudTasks.recordedMessages().length.should.eql(0);
     });
 
+    But("the message should not have have been sent to the DLX", () => {
+      fakePubSub.recordedMessages().length.should.eql(0);
+    });
+
     let secondReponse;
     When("the message is received the second time", async () => {
       secondReponse = await request(broker)
