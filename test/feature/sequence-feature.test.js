@@ -1,6 +1,6 @@
 import { fakeCloudTasks } from "@bonniernews/lu-test";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",

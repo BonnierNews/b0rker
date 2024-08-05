@@ -1,7 +1,7 @@
-import config from "exp-config";
 import { fakeCloudTasks, fakePubSub } from "@bonniernews/lu-test";
+import config from "exp-config";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 
 const triggerMessage = {
   type: "advertisement-order",

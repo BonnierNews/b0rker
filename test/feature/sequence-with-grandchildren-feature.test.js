@@ -1,7 +1,7 @@
 import { fakeCloudTasks, fakeGcpAuth } from "@bonniernews/lu-test";
 import nock from "nock";
 
-import { start, route } from "../../index.js";
+import { route, start } from "../../index.js";
 import jobStorage from "../../lib/job-storage/index.js";
 
 const triggerMessage = {
