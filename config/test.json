@@ -4,7 +4,9 @@
   "logging": {
     "log": "file",
     "logLevel": "debug",
-    "logJson": false
+    "logJson": false,
+    "truncateLog": true,
+    "pretty": true
   },
   "deadLetterTopic": "dead-letter-topic",
   "jobStorage": "memory",
