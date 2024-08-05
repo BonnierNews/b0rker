@@ -157,7 +157,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     When("a specific message is received the first time", async () => {
       firstResponse = await request(broker)
         .post("/v2/sequence/test/perform.http-step")
-        .send({ })
+        .send({})
         .set({ "correlation-id": "some-epic-id", "x-no-retry": "true" });
       await fakeCloudTasks.processMessages();
     });
@@ -179,7 +179,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     When("the message is received the second time", async () => {
       secondReponse = await request(broker)
         .post("/v2/sequence/test/perform.http-step")
-        .send({ })
+        .send({})
         .set({ "correlation-id": "some-epic-id", "x-no-retry": "true", "x-cloudtasks-taskretrycount": 1 });
       await fakeCloudTasks.processMessages();
     });
