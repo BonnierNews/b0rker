@@ -1,10 +1,7 @@
-import events from "events";
-import nock from "nock";
-import "mocha-cakes-2";
 import chai from "chai";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
+import events from "events";
+import "mocha-cakes-2";
+import nock from "nock";
 
 // Make sure dates are displayed in the correct timezone
 process.env.TZ = "Europe/Stockholm";
@@ -20,10 +17,5 @@ chai.config.truncateThreshold = 0;
 chai.config.includeStack = true;
 
 Object.assign(global, { should: chai.should() });
-
-const logFile = path.join(fileURLToPath(import.meta.url), "..", "..", "..", "logs", "test.log");
-if (fs.existsSync(logFile)) {
-  fs.unlinkSync(logFile);
-}
 
 nock.enableNetConnect(/(localhost|127\.0\.0\.1):\d+/);
