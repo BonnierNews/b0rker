@@ -127,7 +127,7 @@ Feature("Messages with too many retries get sent to the DLX", () => {
     });
   });
 
-  Scenario("A message runs once and then doesn't retry because of no retry header", () => {
+  Scenario("A message runs once and then doesn't retry because of no-retry header", () => {
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start({
