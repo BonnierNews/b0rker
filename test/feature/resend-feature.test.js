@@ -99,6 +99,7 @@ Feature("Resending a stuck message", () => {
   });
 
   Scenario("Resending a message without retries", () => {
+    const noRetryHeader = (headers) => headers["x-no-retry"];
     let broker;
     Given("broker is initiated with a recipe", () => {
       broker = start(server);
@@ -130,13 +131,13 @@ Feature("Resending a stuck message", () => {
     });
 
     And("the no retry header should be included in the task header for the first task", () => {
-      response.messages[0].headers["x-no-retry"].should.eql("true");
+      noRetryHeader(response.messages[0].headers).should.eql("true");
     });
 
     And("the no retry header should not be included in the task header for the remaining tasks", () => {
       response.messages
         .filter((_, index) => index > 0)
-        .forEach(({ headers }) => should.not.exist(headers["x-no-retry"]));
+        .forEach(({ headers }) => should.not.exist(noRetryHeader(headers)));
     });
   });
 });
