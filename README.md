@@ -1,3 +1,9 @@
+# DEPRECATED
+
+As of September 2024 this package is deprecated and will receive no further updates.
+
+Any internal changes should be made directly in `lu-greenfield`.
+
 # b0rker
 
 A message broker based on Google [Cloud Tasks](https://cloud.google.com/tasks/docs) (or [PubSub](https://cloud.google.com/pubsub/docs)).
